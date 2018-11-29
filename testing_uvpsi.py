@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pylab as plt
-from fringes import demodulate
+from fringes import *
 
 
 def peaks(M, N):
@@ -30,10 +30,14 @@ delta = np.array([1, 1.5, 2.8, 3.2])
 print(delta)
 
 background = gaussian(60)*3.7
-contrast = 1#gaussian(100)
-images = [(background + contrast*np.cos(phi + dd)) for dd in delta]
+contrast = 0.1 + gaussian(100)
+images = [(100+background + contrast*np.cos(phi + dd)) for dd in delta]
 
-pp = demodulate(images, error_accuracy=1e-8, max_iters=50, verbose=True)
+matrix_images = create_matrix(images)
+matrix_V, matrix_U = vu_factorization(matrix_images, error_accuracy=1e-8, max_iters=20, verbose=True)
+pp = calc_phase(matrix_V).reshape((M, N))
+
+magn = np.absolute(matrix_V[:, 1] + 1j*matrix_V[:, 2]).reshape((M,N))
 
 plt.figure()
 plt.subplot(121)
@@ -42,6 +46,9 @@ plt.subplot(122)
 plt.imshow(images[1], cmap=plt.cm.gray)
 
 plt.figure()
+plt.subplot(121)
 plt.imshow(pp, cmap=plt.cm.gray)
+plt.subplot(122)
+plt.imshow(magn, cmap=plt.cm.gray)
 
 plt.show()

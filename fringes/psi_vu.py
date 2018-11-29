@@ -3,7 +3,8 @@ import numpy as np
 
 def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3, max_iters: int = 20, verbose=False,
                      verbose_step = 5):
-    matrix_I += 1000
+    matrix_I *= 1000
+    matrix_I += 10000
     M, N = matrix_I.shape
     step = 2 * np.pi / N
     initial_deltas = np.linspace(0, 2 * np.pi - step, N)

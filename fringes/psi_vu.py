@@ -8,35 +8,31 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3, max_ite
     initial_deltas = np.linspace(0, 2 * np.pi - step, N)
     s1_ones = np.ones(N)
 
-    factor_U = np.vstack([s1_ones, np.cos(initial_deltas), np.sin(initial_deltas)]).T
-    factor_V = calc_factor_V(matrix_I, factor_U)
-    previous_phase = calc_phase(factor_V)
+    matrix_U = np.vstack([s1_ones, np.cos(initial_deltas), np.sin(initial_deltas)]).T
+    matrix_V = calc_factor_V(matrix_I, matrix_U)
+    previous_phase = calc_phase(matrix_V)
 
-    #image_contrast = np.absolute(factor_V[:, 1] + 1j*factor_V[:, 2])/2.0
-    factor_V[:, 1] = np.cos(previous_phase)#*image_contrast
-    factor_V[:, 2] = -np.sin(previous_phase)#*image_contrast
+    error = 1.0
+    iter = 1
     for iter in range(1, max_iters):
-        factor_U = calc_factor_U(matrix_I, factor_V)
-        factor_V = calc_factor_V(matrix_I, factor_U)
+        matrix_V[:, 1] = np.cos(previous_phase)
+        matrix_V[:, 2] = -np.sin(previous_phase)
+        matrix_U = calc_factor_U(matrix_I, matrix_V)
+        matrix_V = calc_factor_V(matrix_I, matrix_U)
 
-        phase = calc_phase(factor_V)
+        phase = calc_phase(matrix_V)
         error = np.sum(((previous_phase - phase) ** 2)) / float(M)
         previous_phase = phase
 
         if error < error_accuracy:
             break
-
-        #image_contrast = np.absolute(factor_V[:, 1] + 1j * factor_V[:, 2])/2.0
-        factor_V[:, 1] = np.cos(phase)#*image_contrast
-        factor_V[:, 2] = -np.sin(phase)#*image_contrast
-
         if verbose:
             print_iter_info(iter, error, error_accuracy, verbose_step)
 
     if verbose:
         print_report_info(iter, error, error_accuracy)
 
-    return factor_V, factor_U
+    return matrix_V, matrix_U
 
 def calc_factor_U(matrix_I: np.ndarray, factor_V):
     aux_Ainv = np.linalg.inv(factor_V.T @ factor_V)
@@ -71,7 +67,7 @@ def calc_shifts(matrix_U):
     return np.arctan2(matrix_U[:,2], matrix_U[:,1])
 
 def calc_magnitude(matrix_psi):
-    return np.absolute(matrix_U[:,1] + 1j*matrix_U[:,2])
+    return np.absolute(matrix_psi[:,1] + 1j*matrix_psi[:,2])
 
 def print_iter_info(iter, error, error_tol, verbose_step):
     if iter % verbose_step == 0:

@@ -1,6 +1,10 @@
+"""
+Numerical simulation for testing the PSI-VU factorization.
+"""
+
 import numpy as np
 from matplotlib import pylab as plt
-from fringes import *
+from fringes.psi import *
 
 
 def peaks(M, N):
@@ -20,25 +24,26 @@ def gaussian(sigma=10.0, shape=(512, 512)):
 
     return g_values
 
-
+# Dimensions
 M, N = 512, 512
+# Number of fringe patterns
 K = 3
+# Generating the phase that is going to be modulated
 phi = peaks(M,N)*32
-step = 2*np.pi/K
-#delta = np.array([step*n for n in range(K)]) + np.random.rand(K)
-delta = np.array([1, 1.5, 2.8, 3.2])
+# Generating the phase shifts
+delta = np.random.rand(K)*2*np.pi
 print(delta)
 
+# Modeling background illumination
 background = gaussian(60)*3.7
+# Modeling contrast
 contrast = 0.1 + gaussian(100)
-images = [(100+background + contrast*np.cos(phi + dd)) for dd in delta]
+# Generating all fringe patterns
+images = [(background + contrast*np.cos(phi + dd)) for dd in delta]
 
-matrix_images = create_matrix(images)
-matrix_V, matrix_U = vu_factorization(matrix_images, error_accuracy=1e-8, max_iters=20, verbose=True)
-pp = calc_phase(matrix_V).reshape((M, N))
+pp = demodulate(images, error_accuracy=1e-8, max_iters=200, verbose=True)
 
-magn = np.absolute(matrix_V[:, 1] + 1j*matrix_V[:, 2]).reshape((M,N))
-
+# Plotting results
 plt.figure()
 plt.subplot(121)
 plt.imshow(images[0], cmap=plt.cm.gray)
@@ -46,9 +51,6 @@ plt.subplot(122)
 plt.imshow(images[1], cmap=plt.cm.gray)
 
 plt.figure()
-plt.subplot(121)
 plt.imshow(pp, cmap=plt.cm.gray)
-plt.subplot(122)
-plt.imshow(magn, cmap=plt.cm.gray)
 
 plt.show()

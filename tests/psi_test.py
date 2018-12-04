@@ -1,6 +1,12 @@
+"""
+Numerical simulation for testing phase-shifting fringe patter demodulation.
+
+Here we know the phase shifts but we use the :math:`\mathbf V\mathbf U` model to recover the modulating phase.
+"""
+
 import numpy as np
 from matplotlib import pylab as plt
-from fringes import demodulate_psi
+from fringes.psi import demodulate_psi
 
 
 def peaks(M, N):
@@ -24,10 +30,10 @@ def gaussian(sigma=10.0, shape=(512, 512)):
 M, N = 512, 512
 K = 3
 phi = peaks(M,N)*32
-delta = np.random.rand(K)*2*np.pi
+delta = np.linspace(0, 1, K) + np.random.rand(K)*2*np.pi
 
 background = gaussian(60)*3.7
-contrast = gaussian(100)*3.7
+contrast = gaussian(100)*6.7
 images = [(background + contrast*np.cos(phi + dd)) for dd in delta]
 
 pp = demodulate_psi(images, delta)

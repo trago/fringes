@@ -6,3 +6,7 @@ a cosine model and can be seeing as two-dimensional cosine signals. When process
 obtain the modulating phase.
 
 The idea of this package is to offer methods and operations to process fringe pattern images.
+
+## Modules
+
+- **psi** has methods and utilities used to demodulate a sequence of phase-shifting fringe patterns. 

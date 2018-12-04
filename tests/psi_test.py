@@ -1,3 +1,9 @@
+"""
+Numerical simulation for testing phase-shifting fringe patter demodulation.
+
+Here we know the phase shifts but we use the :math:`\mathbf V\mathbf U` model to recover the modulating phase.
+"""
+
 import numpy as np
 from matplotlib import pylab as plt
 from fringes.psi import demodulate_psi

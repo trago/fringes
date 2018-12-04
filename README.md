@@ -1,5 +1,5 @@
 # fringes
-Python package for processing fringe patterns.
+Python3.6 package for processing fringe patterns.
 
 Fringes patterns are a kind of special images obtained, for example, from optical interferometry. These images have
 a cosine model and can be seeing as two-dimensional cosine signals. When processing fringe patterns, the objective is 

@@ -1,8 +1,9 @@
 import numpy as np
+from typing import List, Tuple
 
-
-def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3, max_iters: int = 20, verbose=False,
-                     verbose_step = 5):
+def vu_factorization(matrix_I: np.ndarray, error_accuracy: float=1e-3,
+                     max_iters: int=20,
+                     verbose: bool=False, verbose_step: int=5) -> Tuple[np.ndarray, np.ndarray]:
     matrix_I *= 1000
     matrix_I += 10000
     M, N = matrix_I.shape
@@ -36,20 +37,20 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3, max_ite
 
     return matrix_V, matrix_U
 
-def calc_factor_U(matrix_I: np.ndarray, factor_V):
+def calc_factor_U(matrix_I: np.ndarray, factor_V: np.ndarray) -> np.ndarray:
     aux_Ainv = np.linalg.inv(factor_V.T @ factor_V)
     factor_U = aux_Ainv @ factor_V.T @ matrix_I
 
     return factor_U.T
 
 
-def calc_factor_V(matrix_I: np.ndarray, factor_U):
+def calc_factor_V(matrix_I: np.ndarray, factor_U: np.ndarray) -> np.ndarray:
     aux_Binv = np.linalg.inv(factor_U.T @ factor_U)
     factor_V = matrix_I @ factor_U @ aux_Binv
 
     return factor_V
 
-def create_matrix(image_list):
+def create_matrix(image_list: List[np.ndarray]) -> np.ndarray:
     shape = image_list[0].shape
     N = len(image_list)
     M = shape[0]*shape[1]
@@ -62,22 +63,23 @@ def create_matrix(image_list):
 
     return matrix_images
 
-def calc_phase(matrix_V):
+def calc_phase(matrix_V: np.ndarray) -> np.ndarray:
     return np.arctan2(-matrix_V[:,2], matrix_V[:,1])
 
-def calc_shifts(matrix_U):
+def calc_shifts(matrix_U: np.ndarray) -> np.ndarray:
     return np.arctan2(matrix_U[:,2], matrix_U[:,1])
 
-def calc_magnitude(matrix_psi):
+def calc_magnitude(matrix_psi: np.ndarray) -> np.ndarray:
     return np.absolute(matrix_psi[:,1] + 1j*matrix_psi[:,2])
 
-def print_iter_info(iter, error, error_tol, verbose_step):
+def print_iter_info(iter: int, error: float, error_tol: float,
+                    verbose_step: bool):
     if iter % verbose_step == 0:
         notif = '\tIteration {0:04}: Objective E: {1:10.3e} Current E:{2:10.3e}'. \
             format(iter, error_tol, error)
         print(notif)
 
-def print_report_info(iter, error, error_tol):
+def print_report_info(iter: int, error: float, error_tol: float):
     print()
     if error < error_tol:
         print('Process finished with relative error = {0:10.4e}, iterations = {1}'.
@@ -87,13 +89,16 @@ def print_report_info(iter, error, error_tol):
               format(error))
 
 
-def demodulate(image_list, error_accuracy=1e-3, max_iters=20, verbose=False, verbose_step = 5):
+def demodulate(image_list: List[np.ndarray], error_accuracy: float=1e-3,
+               max_iters: int=20,
+               verbose: bool=False, verbose_step: int=5) -> np.ndarray:
     matrix_form = create_matrix(image_list)
     factor_V, factor_U = vu_factorization(matrix_form, error_accuracy, max_iters, verbose, verbose_step)
 
     return calc_phase(factor_V).reshape(image_list[0].shape)
 
-def demodulate_psi(image_list, phase_step, initial_step=0.0):
+def demodulate_psi(image_list: List[np.ndarray], phase_step: np.ndarray,
+                   initial_step: int=0.0) -> np.ndarray:
     N = len(image_list)
     if isinstance(phase_step, list):
         deltas = np.array(phase_step) - initial_step

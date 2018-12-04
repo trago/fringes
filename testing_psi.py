@@ -24,10 +24,10 @@ def gaussian(sigma=10.0, shape=(512, 512)):
 M, N = 512, 512
 K = 3
 phi = peaks(M,N)*32
-delta = np.random.rand(K)*2*np.pi
+delta = np.linspace(0, 1, K) + np.random.rand(K)*2*np.pi
 
 background = gaussian(60)*3.7
-contrast = gaussian(100)*3.7
+contrast = gaussian(100)*6.7
 images = [(background + contrast*np.cos(phi + dd)) for dd in delta]
 
 pp = demodulate_psi(images, delta)

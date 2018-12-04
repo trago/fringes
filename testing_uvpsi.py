@@ -25,7 +25,7 @@ M, N = 512, 512
 K = 3
 phi = peaks(M,N)*32
 step = 2*np.pi/K
-delta = np.array([step*n for n in range(K)]) + np.random.rand(K)
+delta = np.random.rand(K)*2*np.pi
 print(delta)
 
 background = gaussian(60)*3.7

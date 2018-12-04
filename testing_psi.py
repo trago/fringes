@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pylab as plt
-from fringes import demodulate_psi
+from fringes.psi import demodulate_psi
 
 
 def peaks(M, N):

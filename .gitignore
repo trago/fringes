@@ -1,3 +1,6 @@
 .idea
 .ipynb_checkpoints
 __pycache__
+fringes/*.c
+*.*.so
+*.so

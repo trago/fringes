@@ -2,7 +2,7 @@ import numpy as np
 from numba import jit, vectorize, float32, float64
 
 
-@jit(cache=True, nopython=True)
+@jit(cache=True, nopython=True, nogil=True)
 def grad(p):
     M, N = p.shape
     dx = np.zeros(p.shape)
@@ -27,7 +27,7 @@ def grad(p):
 
 
 @vectorize([float64(float64),
-            float32(float32)], cache=True, nopython=True)
+            float32(float32)], cache=True, nopython=True, nogil=True)
 def wrap(p):
     return p - round(p)
 

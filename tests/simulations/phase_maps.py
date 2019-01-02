@@ -1,12 +1,12 @@
 from unittest import TestCase
 
-from skimage.viewer import ImageViewer
+from skimage.viewer import ImageViewer, CollectionViewer
 
 from fringes import simulations
 from fringes.operators.basic import normalize_range
 
 
-class phase_maps(TestCase):
+class interferogram(TestCase):
 
     def test_interferogram_1(self):
         print('Test 01')
@@ -78,4 +78,46 @@ class phase_maps(TestCase):
         img = simulations.interferogram((512, 512), dc, phase, magn, noise)
 
         viewer = ImageViewer(normalize_range(img))
+        viewer.show()
+
+
+class interferogram_psi(TestCase):
+
+    def test_01(self):
+        print('Test 01')
+        phase = {'ramp': (5, 6)}
+        dc = {'gaussian': (130, 100.0)}
+        noise = {'normal': (0, 0.1)}
+        magn = {'gaussian': (130, 20)}
+        steps = (5, 3.1416/2)
+
+        imgs = simulations.interferogram_psi(steps, (512, 512), dc, phase, magn, noise)
+
+        viewer = CollectionViewer(imgs)
+        viewer.show()
+
+    def test_02(self):
+        print('Test 02')
+        phase = {'peaks': 15.3}
+        dc = {'gaussian': (100.0, 1000)}
+        noise = 'speckle'
+        magn = {'gaussian': (130, 100)}
+        steps = (5, 3.1416/2)
+
+        imgs = simulations.interferogram_psi(steps, (512, 512), dc, phase, magn, noise)
+
+        viewer = CollectionViewer(imgs)
+        viewer.show()
+
+    def test_03(self):
+        print('Test 03')
+        phase = {'parabola': 0.0005}
+        dc = {'gaussian': (100.0, 100)}
+        noise = 'speckle'
+        magn = {'gaussian': (130, 100)}
+        steps = [0.1, 0.5, 0.9, 1.5, 2.2, 3.1, 3.9]
+
+        imgs = simulations.interferogram_psi(steps, (512, 512), dc, phase, magn, noise)
+
+        viewer = CollectionViewer(imgs)
         viewer.show()

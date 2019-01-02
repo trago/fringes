@@ -1,5 +1,8 @@
+from typing import Dict, Union, Tuple, List
+
 import numpy as np
-from typing import Dict, Union, Tuple
+
+from ..operators.basic import normalize_range
 
 
 def peaks(mm: int, nn: int) -> np.ndarray:
@@ -42,18 +45,19 @@ def add_speckle(phase: np.ndarray) -> np.ndarray:
 
 
 def parabola(M, N, cm=-1, cn=-1):
-    cm = M/2 if cm<0 else cm
-    cn = N/2 if cn<0 else cn
+    cm = M / 2 if cm < 0 else cm
+    cn = N / 2 if cn < 0 else cn
 
-    y,x = np.ogrid[0:M, 0:N]
+    y, x = np.ogrid[0:M, 0:N]
 
-    return (x-cn)**2 + (y-cm)**2
+    return (x - cn) ** 2 + (y - cm) ** 2
 
 
 def interferogram(shape, dc: Union[str, Dict[str, Union[float, Tuple[float, float]]]] = 'constant',
                   phase: Union[str, Dict[str, Union[float, Tuple[int, int]]]] = 'peaks',
                   magn: Union[str, Dict[str, float]] = 'constant',
-                  noise: Dict[str, Tuple[float, float]] = 'clean') -> np.ndarray:
+                  noise: Dict[str, Tuple[float, float]] = 'clean',
+                  phase_shift=0.0, normalize=False) -> np.ndarray:
     mm, nn = shape
 
     if isinstance(dc, str):
@@ -67,33 +71,53 @@ def interferogram(shape, dc: Union[str, Dict[str, Union[float, Tuple[float, floa
 
     arg_type = [key for key in phase.keys()][0]
     if arg_type == 'peaks':
-        phase = peaks(mm, nn)*phase['peaks']
+        phase = peaks(mm, nn) * phase['peaks']
     elif arg_type == 'ramp':
         ku, kv = phase['ramp']
         phase = ramp(mm, nn, ku, kv)
     elif arg_type == 'parabola':
         phase = parabola(mm, nn) * phase['parabola']
+    phase += phase_shift
 
     arg_type = [key for key in dc.keys()][0]
     if arg_type == 'constant':
         dc = dc['constant']
     elif arg_type == 'gaussian':
-        dc = gaussian(dc['gaussian'][0], (mm, nn))*dc['gaussian'][1]
+        dc = gaussian(dc['gaussian'][0], (mm, nn)) * dc['gaussian'][1]
 
     arg_type = [key for key in magn.keys()][0]
     if arg_type == 'constant':
         magn = magn['constant']
     elif arg_type == 'gaussian':
-        magn = gaussian(magn['gaussian'][0], (mm, nn))*magn['gaussian'][1]
+        magn = gaussian(magn['gaussian'][0], (mm, nn)) * magn['gaussian'][1]
 
     arg_type = [key for key in noise.keys()][0]
     img = np.zeros((mm, nn), dtype=float)
     if arg_type == 'normal':
         img = dc + magn * np.cos(phase)
-        img += np.random.randn(mm, nn)*np.sqrt(noise['normal'][1]) + noise['normal'][0]
+        img += np.random.randn(mm, nn) * np.sqrt(noise['normal'][1]) + noise['normal'][0]
     elif arg_type == 'speckle':
-        img = dc + magn*add_speckle(phase).real
+        img = dc + magn * add_speckle(phase).real
     elif arg_type == 'clean':
         img = dc + magn * np.cos(phase)
 
+    if normalize:
+        img = normalize_range(img, -1, 1)
+
     return img
+
+
+def interferogram_psi(steps: Union[Tuple[int, float], List[float], np.ndarray] = (5, np.pi / 2),
+                      shape=(512, 512), dc: Union[str, Dict[str, Union[float, Tuple[float, float]]]] = 'constant',
+                      phase: Union[str, Dict[str, Union[float, Tuple[int, int]]]] = 'peaks',
+                      magn: Union[str, Dict[str, float]] = 'constant',
+                      noise: Dict[str, Tuple[float, float]] = 'clean', normalize=True) -> List[np.ndarray]:
+    if isinstance(steps, tuple):
+        steps = [n * steps[1] for n in range(steps[0])]
+
+    images = []
+    for step in steps:
+        img = interferogram(shape, dc, phase, magn, noise, step, normalize)
+        images.append(img)
+
+    return images

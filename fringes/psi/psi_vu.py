@@ -4,14 +4,13 @@ Phase-shifting VU factorization.
 .. moduleauthor:: Julio C. Estrada <julio@cimat.mx>
 """
 
-
 import numpy as np
 from typing import List, Tuple
 
 
-def vu_factorization(matrix_I: np.ndarray, error_accuracy: float=1e-3,
-                     max_iters: int=20,
-                     verbose: bool=False, verbose_step: int=5) -> Tuple[np.ndarray, np.ndarray]:
+def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
+                     max_iters: int = 20,
+                     verbose: bool = False, verbose_step: int = 5) -> Tuple[np.ndarray, np.ndarray]:
     """
     Finds the factorization :math:`\mathbf V\mathbf U` of phase-shifting fringe patterns given the matrix
     :math:`\mathbf I`.
@@ -94,8 +93,8 @@ def create_matrix(image_list: List[np.ndarray]) -> np.ndarray:
     """
     shape = image_list[0].shape
     N = len(image_list)
-    M = shape[0]*shape[1]
-    matrix_images = np.zeros((M,N))
+    M = shape[0] * shape[1]
+    matrix_images = np.zeros((M, N))
 
     for k, img in enumerate(image_list):
         if shape != img.shape:
@@ -112,7 +111,7 @@ def calc_phase(matrix_V: np.ndarray) -> np.ndarray:
     :param matrix_V: the matrix :math:`\mathbf V`
     :return: a 1D array with the phase
     """
-    return np.arctan2(-matrix_V[:,2], matrix_V[:,1])
+    return np.arctan2(-matrix_V[:, 2], matrix_V[:, 1])
 
 
 def calc_shifts(matrix_U: np.ndarray) -> np.ndarray:
@@ -122,7 +121,7 @@ def calc_shifts(matrix_U: np.ndarray) -> np.ndarray:
     :param matrix_U: the matrix :math:`\mathbf U`
     :return: a 1D array with the phase shifts.
     """
-    return np.arctan2(matrix_U[:,2], matrix_U[:,1])
+    return np.arctan2(matrix_U[:, 2], matrix_U[:, 1])
 
 
 def calc_magnitude(matrix_psi: np.ndarray) -> np.ndarray:
@@ -141,7 +140,7 @@ def calc_magnitude(matrix_psi: np.ndarray) -> np.ndarray:
     :return: a 2D array with the magnitude
     """
 
-    return np.absolute(matrix_psi[:,1] + 1j*matrix_psi[:,2])
+    return np.absolute(matrix_psi[:, 1] + 1j * matrix_psi[:, 2])
 
 
 def print_iter_info(iter: int, error: float, error_tol: float,
@@ -176,9 +175,9 @@ def print_report_info(iter: int, error: float, error_tol: float):
               format(error))
 
 
-def demodulate(image_list: List[np.ndarray], error_accuracy: float=1e-3,
-               max_iters: int=20,
-               verbose: bool=False, verbose_step: int=5) -> np.ndarray:
+def demodulate(image_list: List[np.ndarray], error_accuracy: float = 1e-3,
+               max_iters: int = 20,
+               verbose: bool = False, verbose_step: int = 5) -> np.ndarray:
     """
     Given a list of fringe pattern images, it recovers the phase using PSI-VU.
 
@@ -198,7 +197,7 @@ def demodulate(image_list: List[np.ndarray], error_accuracy: float=1e-3,
 
 
 def demodulate_psi(image_list: List[np.ndarray], phase_step: np.ndarray,
-                   initial_step: int=0.0) -> np.ndarray:
+                   initial_step: int = 0.0) -> np.ndarray:
     """
     Given a list of fringe pattern images and the phase shift or step, recovers the modulating phase using the VU
     model.
@@ -218,7 +217,7 @@ def demodulate_psi(image_list: List[np.ndarray], phase_step: np.ndarray,
     elif isinstance(phase_step, np.ndarray):
         deltas = phase_step
     else:
-        deltas = np.array([(n*phase_step - initial_step) for n in range(N)])
+        deltas = np.array([(n * phase_step - initial_step) for n in range(N)])
 
     image_matrix = create_matrix(image_list)
 

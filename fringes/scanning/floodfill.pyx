@@ -2,16 +2,8 @@
 import numpy as np
 cimport cython
 from pixel cimport Pixel
-from libcpp cimport bool
 
 cdef class FloodFill:
-
-    cdef char[:, :] _mask
-    cdef char[:, :] _visited
-    cdef int _mm
-    cdef int _nn
-    cdef list _pixel_queue
-    cdef Pixel _current_pix
 
     def __init__(self, (int, int) shape, Pixel start_pixel,
                  char[:,:] mask = None):
@@ -72,7 +64,6 @@ cdef class FloodFill:
 
 
 cdef class _Lattice:
-    cdef char[:, :] _lattice
 
     def __init__(self, char[:, :] array_2d):
         self._lattice = array_2d

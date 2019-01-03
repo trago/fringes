@@ -1,3 +1,5 @@
+# distutils: language=c++
+# cython: language_level=2
 from pixel cimport Pixel, pixel_t
 from libcpp cimport bool
 from libcpp.list cimport list as list_t

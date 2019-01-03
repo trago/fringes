@@ -1,5 +1,3 @@
-# distutils: language = c++
-import numpy as np
 from libc.stdlib cimport rand, RAND_MAX, srand
 from libc.time cimport time, time_t
 cimport cython
@@ -18,11 +16,31 @@ cdef class Pixel:
             return self._pixel.col
         if item == 1:
             return self._pixel.row
-        raise IndexError('A pixel has only two elements (row, col)')
+        raise IndexError('A pixels has only two elements (row, col)')
+
+    def __str__(self):
+        return '({}, {})'.format(self._pixel.col, self._pixel.col)
+
+    def neighborhood(self, shuffle=False):
+        cdef list obj_pixels = []
+        cdef vector[pixel_t] pixels = self._neighborhood(shuffle)
+        cdef int n
+        for n in range(8):
+            obj_pixels.append(Pixel(pixels[n].col, pixels[n].row))
+
+        return obj_pixels
+
+    @property
+    def col(self):
+        return self._pixel.col
+
+    @property
+    def row(self):
+        return self._pixel.row
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     @cython.wraparound(False)  # turn off negative index wrapping for entire function
-    cdef vector[pixel_t] neighborhood(self, bool shuffle):
+    cdef vector[pixel_t] _neighborhood(self, bool shuffle):
         cdef time_t t
         cdef int mm[3]
         cdef int nn[3]
@@ -44,18 +62,6 @@ cdef class Pixel:
                     idx+=1
 
         return neighbors
-
-    @property
-    def col(self):
-        return self._pixel.col
-
-    @property
-    def row(self):
-        return self._pixel.row
-
-    def __str__(self):
-        return '({}, {})'.format(*self._pixel)
-
 
 
 cdef Pixel _add(Pixel px1, Pixel px2):

@@ -1,4 +1,3 @@
-# distutils: language = c++
 import numpy as np
 cimport cython
 from pixel cimport Pixel
@@ -19,9 +18,25 @@ cdef class FloodFill:
 
         self._start()
 
+    def __str__(self):
+        return 'queued: {}, current: {}'.format(self._pixel_queue.size(),
+                                                (self._current_pix.col, self._current_pix.row))
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self._next_pixel()
+
+    def __len__(self):
+        return self._pixel_queue.size()
+
+    cpdef bool empty(self):
+        return self._pixel_queue.empty()
+
     cdef void _start(self):
         cdef _Lattice l_visited = _Lattice(self._visited)
-        cdef vector[pixel_t] neighbors = Pixel(self._current_pix.col, self._current_pix.row).neighborhood(True)
+        cdef vector[pixel_t] neighbors = Pixel(self._current_pix.col, self._current_pix.row)._neighborhood(True)
 
         l_visited[self._current_pix] = True
         self._extend_pixels(neighbors)
@@ -35,7 +50,7 @@ cdef class FloodFill:
             self._current_pix = pixel
             self._pixel_queue.pop_front()
             obj_pixel = Pixel(pixel.col, pixel.row)
-            self._extend_pixels(obj_pixel.neighborhood(True))
+            self._extend_pixels(obj_pixel._neighborhood(True))
 
             return obj_pixel
 
@@ -43,9 +58,6 @@ cdef class FloodFill:
         for n in range(8):
             if self._is_into(neighbors[n]):
                 self._pixel_queue.push_back(neighbors[n])
-
-    cpdef bool empty(self):
-        return self._pixel_queue.empty()
 
     cdef bool _is_into(self, pixel_t pix):
         if 0 <= pix.row < self._mm:
@@ -55,17 +67,6 @@ cdef class FloodFill:
                         self._visited[pix.col, pix.row] = True
                         return True
         return False
-
-    def __str__(self):
-        return 'queued: {}, current: {}'.format(self._pixel_queue.size(),
-                                                (self._current_pix.col, self._current_pix.row))
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return self._next_pixel()
-
 
 cdef class _Lattice:
 

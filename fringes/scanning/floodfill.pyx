@@ -36,7 +36,7 @@ cdef class FloodFill:
 
     cdef void _start(self):
         cdef _Lattice l_visited = _Lattice(self._visited)
-        cdef vector[pixel_t] neighbors = Pixel(self._current_pix.col, self._current_pix.row)._neighborhood(True)
+        cdef vector[pixel_t] neighbors = Pixel(self._current_pix.row, self._current_pix.col)._neighborhood(True)
 
         l_visited[self._current_pix] = True
         self._extend_pixels(neighbors)
@@ -49,7 +49,7 @@ cdef class FloodFill:
             pixel = self._pixel_queue.front()
             self._current_pix = pixel
             self._pixel_queue.pop_front()
-            obj_pixel = Pixel(pixel.col, pixel.row)
+            obj_pixel = Pixel(pixel.row, pixel.col)
             self._extend_pixels(obj_pixel._neighborhood(True))
 
             return obj_pixel

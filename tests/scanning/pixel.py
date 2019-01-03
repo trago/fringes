@@ -5,15 +5,15 @@ from fringes.scanning import pixel
 class Pixel(unittest.TestCase):
     def test_init(self):
         pix = pixel.Pixel(10, 12)
-        self.assertTrue(pix.col == 10 and pix.row == 12)
+        self.assertTrue(pix.col == 12 and pix.row == 10)
 
     def test_add(self):
         pix1 = pixel.Pixel(10, 5)
         pix2 = pixel.Pixel(10, 5)
         pix = pix1 + pix2
 
-        self.assertTrue(pix.col == 20)
-        self.assertTrue(pix.row == 10)
+        self.assertTrue(pix.col == 10)
+        self.assertTrue(pix.row == 20)
 
     def test_neighborhood(self):
         pix = pixel.Pixel(10, 10)

@@ -4,7 +4,7 @@ cimport cython
 
 cdef class Pixel:
 
-    def __init__(self, int col, int row):
+    def __init__(self, int row, int col):
         self._pixel.col = col
         self._pixel.row = row
 
@@ -13,9 +13,9 @@ cdef class Pixel:
 
     def __getitem__(self, int item):
         if item == 0:
-            return self._pixel.col
-        if item == 1:
             return self._pixel.row
+        if item == 1:
+            return self._pixel.col
         raise IndexError('A pixels has only two elements (row, col)')
 
     def __str__(self):
@@ -26,7 +26,7 @@ cdef class Pixel:
         cdef vector[pixel_t] pixels = self._neighborhood(shuffle)
         cdef int n
         for n in range(8):
-            obj_pixels.append(Pixel(pixels[n].col, pixels[n].row))
+            obj_pixels.append(Pixel(pixels[n].row, pixels[n].col))
 
         return obj_pixels
 
@@ -68,7 +68,7 @@ cdef Pixel _add(Pixel px1, Pixel px2):
     cdef int col = px1._pixel.col + px2._pixel.col
     cdef int row = px1._pixel.row + px2._pixel.row
 
-    return Pixel(col, row)
+    return Pixel(row, col)
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
 @cython.wraparound(False)  # turn off negative index wrapping for entire function

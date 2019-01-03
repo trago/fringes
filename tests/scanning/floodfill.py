@@ -16,7 +16,7 @@ class FloodFill_Test(unittest.TestCase):
         count =1
         for pix in scanner:
             if count <= 28:
-                visited[pix.col, pix.row] = count
+                visited[pix.row, pix.col] = count
                 count += 1
             else:
                 break
@@ -29,7 +29,7 @@ class FloodFill_Test(unittest.TestCase):
         visited = np.zeros((1512, 512), dtype=np.uint32)
         visited[5, 5] = 1
 
-        scanner = FloodFill((1512, 512), Pixel(5, 5))
+        scanner = FloodFill((1512, 512), Pixel(5, 15))
         count = 1
         for pix in scanner:
             visited[pix.row, pix.col] = count

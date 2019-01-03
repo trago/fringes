@@ -4,7 +4,8 @@ from Cython.Build import cythonize
 
 
 cython_modules = [
-    "./fringes/scanning/pixel.pyx"
+    "./fringes/scanning/pixel.pyx",
+    "./fringes/scanning/floodfill.pyx"
 ]
 
 setup(

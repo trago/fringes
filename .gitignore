@@ -4,3 +4,5 @@ __pycache__
 fringes/*.c
 *.*.so
 *.so
+*.cc
+*.cpp

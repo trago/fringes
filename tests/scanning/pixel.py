@@ -4,8 +4,8 @@ from fringes.scanning import pixel
 
 class Pixel(unittest.TestCase):
     def test_init(self):
-        pix = pixel.Pixel(10, 10)
-        print(pix.col, pix.row)
+        pix = pixel.Pixel(10, 12)
+        self.assertTrue(pix.col == 10 and pix.row == 12)
 
     def test_add(self):
         pix1 = pixel.Pixel(10, 5)

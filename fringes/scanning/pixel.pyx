@@ -1,12 +1,11 @@
+# distutils: language = c++
 import numpy as np
-from libcpp cimport bool
 from libc.stdlib cimport rand, RAND_MAX, srand
 from libc.time cimport time, time_t
 cimport cython
 
+
 cdef class Pixel:
-    cdef int _col
-    cdef int _row
 
     def __init__(self, int col, int row):
         self._col = col
@@ -22,7 +21,9 @@ cdef class Pixel:
             return self._row
         raise IndexError('A pixel has only two elements (row, col)')
 
-    def neighborhood(self, bool shuffle=False):
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    @cython.wraparound(False)  # turn off negative index wrapping for entire function
+    cpdef list neighborhood(self, bool shuffle):
         cdef time_t t
         cdef int mm[3]
         cdef int nn[3]
@@ -63,7 +64,7 @@ cdef Pixel _add(Pixel px1, Pixel px2):
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
 @cython.wraparound(False)  # turn off negative index wrapping for entire function
-cdef void _shuffle(int[:] array, size_t n):
+cdef void _shuffle(int[:] array, size_t n) nogil:
     cdef size_t i
     cdef size_t j
     cdef int t

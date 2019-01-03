@@ -10,9 +10,9 @@ cdef class FloodFill:
         self._current_pix.col = start_pixel.col
         self._current_pix.row = start_pixel.row
 
-        self._visited = np.zeros((self._mm, self._nn), dtype='int8')
+        self._visited = np.zeros((self._mm, self._nn), dtype='uint8')
         if mask is None:
-            self._mask = np.ones((self._mm, self._nn), dtype='int8')
+            self._mask = np.ones((self._mm, self._nn), dtype='uint8')
         else:
             self._mask = mask
 
@@ -43,7 +43,7 @@ cdef class FloodFill:
 
     cdef Pixel _next_pixel(self):
         cdef pixel_t pixel
-        if self.empty():
+        if self._pixel_queue.empty():
             raise StopIteration
         else:
             pixel = self._pixel_queue.front()
@@ -54,17 +54,21 @@ cdef class FloodFill:
 
             return obj_pixel
 
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    @cython.wraparound(False)  # turn off negative index wrapping for entire function
     cdef void _extend_pixels(self, vector[pixel_t] neighbors):
         for n in range(8):
             if self._is_into(neighbors[n]):
                 self._pixel_queue.push_back(neighbors[n])
 
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    @cython.wraparound(False)  # turn off negative index wrapping for entire function
     cdef bool _is_into(self, pixel_t pix):
         if 0 <= pix.row < self._mm:
             if 0 <= pix.col < self._nn:
-                if self._mask[pix.col, pix.row]:
-                    if not self._visited[pix.col, pix.row]:
-                        self._visited[pix.col, pix.row] = True
+                if self._mask[pix.row, pix.col]:
+                    if not self._visited[pix.row, pix.col]:
+                        self._visited[pix.row, pix.col] = True
                         return True
         return False
 
@@ -82,9 +86,9 @@ cdef class _Lattice:
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     @cython.wraparound(False)  # turn off negative index wrapping for entire function
     cdef char _getitem(self, pixel_t item):
-        return self._lattice[item.col, item.row]
+        return self._lattice[item.row, item.col]
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     @cython.wraparound(False)  # turn off negative index wrapping for entire function
     cdef void _setitem(self, pixel_t key, char value):
-        self._lattice[key.col, key.row] = value
+        self._lattice[key.row, key.col] = value

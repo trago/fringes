@@ -15,14 +15,6 @@ class Pixel(unittest.TestCase):
         self.assertTrue(pix.col == 20)
         self.assertTrue(pix.row == 10)
 
-    def test_neighborhood(self):
-        pix = pixel.Pixel(10, 10)
-        neighborhood = pix.neighborhood(True)
-        self.assertTrue(len(neighborhood)==8)
-
-        for pix in neighborhood:
-            print(pix.col, pix.row)
-
     def test_get(self):
         pix = pixel.Pixel(10, 15)
 

@@ -4,26 +4,25 @@ from libc.stdlib cimport rand, RAND_MAX, srand
 from libc.time cimport time, time_t
 cimport cython
 
-
 cdef class Pixel:
 
     def __init__(self, int col, int row):
-        self._col = col
-        self._row = row
+        self._pixel.col = col
+        self._pixel.row = row
 
     def __add__(self, Pixel other):
         return _add(self, other)
 
     def __getitem__(self, int item):
         if item == 0:
-            return self._col
+            return self._pixel.col
         if item == 1:
-            return self._row
+            return self._pixel.row
         raise IndexError('A pixel has only two elements (row, col)')
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     @cython.wraparound(False)  # turn off negative index wrapping for entire function
-    cpdef list neighborhood(self, bool shuffle):
+    cdef vector[pixel_t] neighborhood(self, bool shuffle):
         cdef time_t t
         cdef int mm[3]
         cdef int nn[3]
@@ -35,21 +34,24 @@ cdef class Pixel:
             _shuffle(nn, 3)
             _shuffle(mm, 3)
 
-        cdef list neighbors = []
+        cdef vector[pixel_t] neighbors = vector[pixel_t](8)
+        cdef idx = 0
         for m in range(3):
             for n in range(3):
                 if mm[m] != 0 or nn[n] != 0:
-                    neighbors.append(self.__add__(Pixel(mm[m], nn[n])))
+                    neighbors[idx].col = self._pixel.col + mm[m]
+                    neighbors[idx].row = self._pixel.row + nn[n]
+                    idx+=1
 
         return neighbors
 
     @property
     def col(self):
-        return self._col
+        return self._pixel.col
 
     @property
     def row(self):
-        return self._row
+        return self._pixel.row
 
     def __str__(self):
         return '({}, {})'.format(*self._pixel)
@@ -57,8 +59,8 @@ cdef class Pixel:
 
 
 cdef Pixel _add(Pixel px1, Pixel px2):
-    cdef int col = px1._col + px2._col
-    cdef int row = px1._row + px2._row
+    cdef int col = px1._pixel.col + px2._pixel.col
+    cdef int row = px1._pixel.row + px2._pixel.row
 
     return Pixel(col, row)
 

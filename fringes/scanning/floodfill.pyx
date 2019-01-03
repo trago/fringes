@@ -5,11 +5,11 @@ from pixel cimport Pixel
 
 cdef class FloodFill:
 
-    def __init__(self, (int, int) shape, Pixel start_pixel,
+    def __init__(self, shape, Pixel start_pixel,
                  char[:,:] mask = None):
         self._mm, self._nn = shape
-        self._current_pix = start_pixel
-        self._pixel_queue = []
+        self._current_pix.col = start_pixel.col
+        self._current_pix.row = start_pixel.row
 
         self._visited = np.zeros((self._mm, self._nn), dtype='int8')
         if mask is None:
@@ -21,40 +21,44 @@ cdef class FloodFill:
 
     cdef void _start(self):
         cdef _Lattice l_visited = _Lattice(self._visited)
+        cdef vector[pixel_t] neighbors = Pixel(self._current_pix.col, self._current_pix.row).neighborhood(True)
 
         l_visited[self._current_pix] = True
-        neighbors = self._current_pix.neighborhood(True)
         self._extend_pixels(neighbors)
 
     cdef Pixel _next_pixel(self):
+        cdef pixel_t pixel
         if self.empty():
             raise StopIteration
         else:
-            self._current_pix = self._pixel_queue.pop(0)
-            self._extend_pixels(self._current_pix.neighborhood(True))
+            pixel = self._pixel_queue.front()
+            self._current_pix = pixel
+            self._pixel_queue.pop_front()
+            obj_pixel = Pixel(pixel.col, pixel.row)
+            self._extend_pixels(obj_pixel.neighborhood(True))
 
-            return self._current_pix
+            return obj_pixel
 
-    cdef void _extend_pixels(self, list neighbors):
-        cdef Pixel pix
-        for pix in neighbors:
-            if self._is_into(pix):
-                    self._pixel_queue.append(pix)
+    cdef void _extend_pixels(self, vector[pixel_t] neighbors):
+        for n in range(8):
+            if self._is_into(neighbors[n]):
+                self._pixel_queue.push_back(neighbors[n])
 
     cpdef bool empty(self):
-        return len(self._pixel_queue) == 0
+        return self._pixel_queue.empty()
 
-    cdef bool _is_into(self, Pixel pix):
-        if 0 <= pix._col < self._mm:
-            if 0 <= pix._row < self._nn:
-                if self._mask[pix._col, pix._row]:
-                    if not self._visited[pix._col, pix._row]:
-                        self._visited[pix._col, pix._row] = True
+    cdef bool _is_into(self, pixel_t pix):
+        if 0 <= pix.row < self._mm:
+            if 0 <= pix.col < self._nn:
+                if self._mask[pix.col, pix.row]:
+                    if not self._visited[pix.col, pix.row]:
+                        self._visited[pix.col, pix.row] = True
                         return True
         return False
 
     def __str__(self):
-        return 'queued: {}, current: {}'.format(len(self._pixel_queue), self._current_pix)
+        return 'queued: {}, current: {}'.format(self._pixel_queue.size(),
+                                                (self._current_pix.col, self._current_pix.row))
 
     def __iter__(self):
         return self
@@ -68,18 +72,18 @@ cdef class _Lattice:
     def __init__(self, char[:, :] array_2d):
         self._lattice = array_2d
 
-    def __getitem__(self, Pixel item):
+    def __getitem__(self, pixel_t item):
         return self._getitem(item)
 
-    def __setitem__(self, Pixel key, char value):
+    def __setitem__(self, pixel_t key, char value):
         self._setitem(key, value)
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     @cython.wraparound(False)  # turn off negative index wrapping for entire function
-    cdef char _getitem(self, Pixel item):
-        return self._lattice[item._col, item._row]
+    cdef char _getitem(self, pixel_t item):
+        return self._lattice[item.col, item.row]
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     @cython.wraparound(False)  # turn off negative index wrapping for entire function
-    cdef void _setitem(self, Pixel key, char value):
-        self._lattice[key._col, key._row] = value
+    cdef void _setitem(self, pixel_t key, char value):
+        self._lattice[key.col, key.row] = value

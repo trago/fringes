@@ -1,4 +1,4 @@
-from ..scanning import FloodFill
+from ..scanning import FloodFill, Pixel
 
 
 class FloodUnwrap(FloodFill):

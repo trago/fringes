@@ -26,13 +26,13 @@ class FloodFill_Test(unittest.TestCase):
         print(visited)
 
     def test_iter_2(self):
-        visited = np.zeros((512, 512), dtype=np.uint32)
+        visited = np.zeros((1512, 1512), dtype=np.uint32)
         visited[5, 5] = 1
 
-        scanner = FloodFill((512, 512), Pixel(5, 5))
+        scanner = FloodFill((1512, 1512), Pixel(5, 5))
         count = 1
         for pix in scanner:
             visited[pix.col, pix.row] = count
             count += 1
 
-        self.assertTrue(count == 512*512)
+        self.assertTrue(count == 1512*1512)

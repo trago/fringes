@@ -1,59 +1,12 @@
-from typing import Dict, Union, Tuple, List
+from typing import Dict, Union, List
 
-import numpy as np
-
+from ._utils import add_speckle
+from .functions import *
 from ..operators.basic import normalize_range
 
 
-def peaks(mm: int, nn: int) -> np.ndarray:
-    y, x = np.ogrid[-3.0:3.0:mm * 1j, -3.0:3.0:nn * 1j]
-
-    p = 1 - x / 2.0 + x ** 5 + y ** 3
-    p *= np.exp(-x ** 2 - y ** 2)
-
-    return p
-
-
-def gaussian(sigma: float = 10.0, shape: Tuple[int, int] = (512, 512)) -> np.ndarray:
-    mm, nn = shape
-    y, x = np.ogrid[-mm / 2:mm / 2:mm * 1j, -nn / 2:nn / 2:nn * 1j]
-
-    g_values = np.exp(-(x ** 2 + y ** 2) / (2 * sigma ** 2))
-
-    return g_values
-
-
-def ramp(M: int, N: int, ku: int = 32, kv: int = 0) -> np.ndarray:
-    y, x = np.ogrid[-M / 2.0:M / 2.0:M * 1j, -N / 2.0:N / 2.0:N * 1j]
-    u = 2 * np.pi * ku / N
-    v = 2 * np.pi * kv / M
-    return u * x + v * y
-
-
-def add_speckle(phase: np.ndarray) -> np.ndarray:
-    n1 = np.random.rand(*phase.shape) * np.pi * 2 - np.pi
-
-    Ir = np.cos(n1)
-
-    I1 = np.cos(n1 + phase)
-    Ic = (Ir + I1) ** 2
-
-    I2 = np.sin(n1 + phase)
-    Is = (Ir + I2) ** 2
-
-    return Ic + 1j * Is
-
-
-def parabola(M, N, cm=-1, cn=-1):
-    cm = M / 2 if cm < 0 else cm
-    cn = N / 2 if cn < 0 else cn
-
-    y, x = np.ogrid[0:M, 0:N]
-
-    return (x - cn) ** 2 + (y - cm) ** 2
-
-
-def interferogram(shape, dc: Union[str, Dict[str, Union[float, Tuple[float, float]]]] = 'constant',
+def interferogram(shape: Tuple[int, int],
+                  dc: Union[str, Dict[str, Union[float, Tuple[float, float]]]] = 'constant',
                   phase: Union[str, Dict[str, Union[float, Tuple[int, int]]]] = 'peaks',
                   magn: Union[str, Dict[str, float]] = 'constant',
                   noise: Dict[str, Tuple[float, float]] = 'clean',
@@ -69,13 +22,12 @@ def interferogram(shape, dc: Union[str, Dict[str, Union[float, Tuple[float, floa
     if isinstance(noise, str):
         noise = {noise: 0.0}
 
-    arg_type = [key for key in phase.keys()][0]
-    if arg_type == 'peaks':
+    if phase.get('peaks', None) is not None:
         phase = peaks(mm, nn) * phase['peaks']
-    elif arg_type == 'ramp':
+    elif phase.get('ramp', None) is not None:
         ku, kv = phase['ramp']
         phase = ramp(mm, nn, ku, kv)
-    elif arg_type == 'parabola':
+    elif phase.get('parabola', None) is not None:
         phase = parabola(mm, nn) * phase['parabola']
     phase += phase_shift
 
@@ -121,3 +73,42 @@ def interferogram_psi(steps: Union[Tuple[int, float], List[float], np.ndarray] =
         images.append(img)
 
     return images
+
+
+def wavefront(shape: Tuple[int, int],
+              phase: Union[str, Dict[str, Union[float, Tuple[int, int]]]] = 'peaks',
+              noise: Dict[str, Tuple[float, float]] = 'clean',
+              normalize=False) -> np.ndarray:
+    mm, nn = shape
+
+    if isinstance(phase, str):
+        phase = {phase: 1.0}
+    if isinstance(noise, str):
+        noise = {noise: 0.0}
+
+    if phase.get('peaks', None) is not None:
+        phase = peaks(mm, nn) * phase['peaks']
+    elif phase.get('ramp', None) is not None:
+        ku, kv = phase['ramp']
+        phase = ramp(mm, nn, ku, kv)
+    elif phase.get('parabola', None) is not None:
+        phase = parabola(mm, nn) * phase['parabola']
+
+    img = np.zeros((mm, nn), dtype=float)
+    if noise.get('normal', None) is not None:
+        phase_noise = np.random.randn(mm, nn) * np.sqrt(noise['normal'][1]) + noise['normal'][0]
+        img_cc = np.cos(phase + phase_noise)
+        img_ss = np.sin(phase + phase_noise)
+        img = np.arctan2(img_ss, img_cc)
+    elif noise.get('speckle', None) is not None:
+        speckle = add_speckle(phase)
+        img = np.arctan2(speckle.imag, speckle.real)
+    elif noise.get('clean', None) is not None:
+        img_cc = np.cos(phase)
+        img_ss = np.sin(phase)
+        img = np.arctan2(img_ss, img_cc)
+
+    if normalize:
+        img /= 2*np.pi
+
+    return img

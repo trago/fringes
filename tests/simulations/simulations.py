@@ -15,7 +15,7 @@ class interferogram(TestCase):
         noise = {'normal': (0, 0.1)}
         magn = {'gaussian': (130,20)}
 
-        img = simulations.interferogram((512, 512), dc, phase, magn, noise)
+        img = simulations.interferogram((256, 512), dc, phase, magn, noise)
 
         viewer = ImageViewer(normalize_range(img))
         viewer.show()
@@ -120,4 +120,36 @@ class interferogram_psi(TestCase):
         imgs = simulations.interferogram_psi(steps, (512, 512), dc, phase, magn, noise)
 
         viewer = CollectionViewer(imgs)
+        viewer.show()
+
+class wavefront(TestCase):
+
+    def test_01(self):
+        print('Test 01')
+        phase = {'ramp': (5, 6)}
+        noise = {'normal': (0, 0.1)}
+
+        img = simulations.wavefront((512, 512), phase, noise, normalize=True)
+
+        viewer = ImageViewer(normalize_range(img))
+        viewer.show()
+
+    def test_02(self):
+        print('Test 02')
+        phase = {'peaks': 15.3}
+        noise = 'speckle'
+
+        img = simulations.wavefront((512, 512), phase, noise, normalize=True)
+
+        viewer = ImageViewer(normalize_range(img))
+        viewer.show()
+
+    def test_03(self):
+        print('Test 03')
+        phase = {'parabola': 0.0005}
+        noise = 'clean'
+
+        img = simulations.wavefront((512, 512), phase, noise, normalize=True)
+
+        viewer = ImageViewer(normalize_range(img))
         viewer.show()

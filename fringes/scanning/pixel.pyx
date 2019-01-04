@@ -19,7 +19,7 @@ cdef class Pixel:
         raise IndexError('A pixels has only two elements (row, col)')
 
     def __str__(self):
-        return '({}, {})'.format(self._pixel.col, self._pixel.col)
+        return '({}, {})'.format(self._pixel.row, self._pixel.col)
 
     def neighborhood(self, shuffle=False):
         cdef list obj_pixels = []

@@ -1,6 +1,4 @@
 from numba import jit, njit
-from numba import types as tp
-
 
 @jit(cache=True, nopython=True)
 def unwrap_value(v1, v2):

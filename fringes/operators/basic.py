@@ -27,7 +27,7 @@ def grad(p):
 
 
 @vectorize([float64(float64),
-            float32(float32)], cache=True, nopython=True, nogil=True)
+            float32(float32)], cache=True, nopython=True)
 def wrap(p):
     return p - round(p)
 

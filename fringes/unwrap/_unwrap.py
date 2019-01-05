@@ -42,25 +42,73 @@ def floodfill(pp: np.ndarray, mask: np.ndarray = None, start_at=(50, 50)):
 def find_inconsistencies(pw: np.ndarray, mask: np.ndarray = None):
     @jit(['u1[:,:](f8[:,:], u1[:,:])',
           'u1[:,:](f4[:,:], u1[:,:])'],
-         cache=True, nopython=True, fastmath=True, parallel=True)
+         cache=True, nopython=True, parallel=True)
     def _find_inconsistencies(_pw: np.ndarray, _mask: np.ndarray):
         mm, nn = _pw.shape
 
         inconsistent = np.ones_like(_pw, dtype=np.uint8)
-        for n in range(0, nn):
-            for m in range(0, mm):
-                if n > 0 and m > 0:
-                    if _mask[m, n] and _mask[m, n - 1] \
-                            and _mask[m - 1, n - 1] and _mask[m - 1, n]:
-                        s = wrap(_pw[m, n] - _pw[m, n - 1])
-                        s += wrap(_pw[m, n - 1] - _pw[m - 1, n - 1])
-                        s += wrap(_pw[m - 1, n - 1] - _pw[m - 1, n])
-                        s += wrap(_pw[m - 1, n] - _pw[m, n])
-                        if np.fabs(s) > 1e-8:
-                            inconsistent[m, n] = 0
-                            inconsistent[m, n - 1] = 0
-                            inconsistent[m - 1, n - 1] = 0
-                            inconsistent[m - 1, n] = 0
+        for n in range(1, nn-1):
+            for m in range(1, mm-1):
+                if _mask[m, n] and _mask[m, n - 1] \
+                        and _mask[m - 1, n - 1] and _mask[m - 1, n]\
+                        and _mask[m + 1, n + 1] and _mask[m + 1, n] and _mask[m, n + 1]:
+                    s = wrap(_pw[m, n - 1] - _pw[m, n])
+                    s += wrap(_pw[m, n] - _pw[m, n + 1])
+                    s += wrap(_pw[m, n + 1] - _pw[m, n - 1])
+                    if np.fabs(s) > 1e-8:
+                        for j in range(n - 1, n + 2):
+                            inconsistent[m, j] = 0
+
+                    s = wrap(_pw[m - 1, n] - _pw[m, n])
+                    s += wrap(_pw[m, n] - _pw[m + 1, n])
+                    s += wrap(_pw[m + 1, n] - _pw[m - 1, n])
+                    if np.fabs(s) > 1e-8:
+                        for j in range(m - 1, m + 2):
+                            inconsistent[j, n] = 0
+
+                    s = wrap(_pw[m - 1, n - 1] - _pw[m, n])
+                    s += wrap(_pw[m, n] - _pw[m + 1, n + 1])
+                    s += wrap(_pw[m + 1, n + 1] - _pw[m - 1, n - 1])
+                    if np.fabs(s) > 1e-8:
+                        inconsistent[m - 1, n - 1] = 0
+                        inconsistent[m, n] = 0
+                        inconsistent[m + 1, n + 1] = 0
+
+                    s = wrap(_pw[m + 1, n - 1] - _pw[m, n])
+                    s += wrap(_pw[m, n] - _pw[m - 1, n + 1])
+                    s += wrap(_pw[m - 1, n + 1] - _pw[m + 1, n - 1])
+                    if np.fabs(s) > 1e-8:
+                        inconsistent[m + 1, n - 1] = 0
+                        inconsistent[m, n] = 0
+                        inconsistent[m - 1, n + 1] = 0
+
+                    # s = wrap(_pw[m - 1, n - 1] - _pw[m - 1, n])
+                    # s += wrap(_pw[m - 1, n] - _pw[m - 1, n + 1])
+                    # s += wrap(_pw[m - 1, n + 1] - _pw[m, n + 1])
+                    # s += wrap(_pw[m, n + 1] - _pw[m + 1, n + 1])
+                    # s += wrap(_pw[m + 1, n + 1] - _pw[m + 1, n])
+                    # s += wrap(_pw[m + 1, n] - _pw[m + 1, n - 1])
+                    # s += wrap(_pw[m + 1, n - 1] - _pw[m, n - 1])
+                    # s += wrap(_pw[m, n - 1] - _pw[m - 1, n - 1])
+                    # if np.fabs(s) > 1e-8:
+                    #     inconsistent[m - 1, n - 1] = 0
+                    #     inconsistent[m - 1, n] = 0
+                    #     inconsistent[m - 1, n - 1] = 0
+                    #     inconsistent[m, n + 1] = 0
+                    #     inconsistent[m + 1, n + 1] = 0
+                    #     inconsistent[m + 1, n] = 0
+                    #     inconsistent[m + 1, n - 1] = 0
+                    #     inconsistent[m, n - 1] = 0
+
+                    s = wrap(_pw[m, n] - _pw[m, n - 1])
+                    s += wrap(_pw[m, n - 1] - _pw[m - 1, n - 1])
+                    s += wrap(_pw[m - 1, n - 1] - _pw[m - 1, n])
+                    s += wrap(_pw[m - 1, n] - _pw[m, n])
+                    if np.fabs(s) > 1e-8:
+                        inconsistent[m, n] = 0
+                        inconsistent[m, n - 1] = 0
+                        inconsistent[m - 1, n - 1] = 0
+                        inconsistent[m - 1, n] = 0
         return inconsistent
 
     if mask is None:

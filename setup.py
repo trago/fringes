@@ -3,7 +3,7 @@ from Cython.Build import cythonize
 
 cython_modules = [
     "./fringes/scanning/pixel.pyx",
-    "./fringes/scanning/floodfill.pyx"
+    "./fringes/scanning/floodfill_unwrap.pyx"
 ]
 
 compile_directives = {

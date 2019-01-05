@@ -35,5 +35,6 @@ def wrap(p):
 def normalize_range(g: np.ndarray, min_v=0, max_v=1):
     a = g.min()
     b = g.max()
-
+    if a == b:
+        return np.zeros_like(g)
     return (max_v-min_v)*(g-a)/(b-a) + min_v

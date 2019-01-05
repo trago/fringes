@@ -26,7 +26,7 @@ class unwrap(unittest.TestCase):
         viewer.show()
 
     def test_find_inconsistencies_00(self):
-        phase = wavefront((256, 512), {'parabola': 0.0005}, noise={'normal': (0, 0.3)}, normalize=True)
+        phase = wavefront((256, 512), {'parabola': 0.0005}, noise={'normal': (0, 0.5)}, normalize=True)
         mask = find_inconsistencies(phase)
         up = floodfill(phase, mask, start_at=(128, 256))
         viewer = CollectionViewer([normalize_range(mask),

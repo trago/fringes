@@ -19,6 +19,7 @@ cdef class FloodFill:
     cpdef bool empty(self)
     cdef bool _is_into(self, pixel_t pix)
     cdef list_t[pixel_t] get_pixel_queue(self)
+    cdef Pixel _pop_pixel(self)
 
 cdef class _Lattice:
     cdef char[:, :] _lattice

@@ -7,8 +7,8 @@ cdef class FloodFill:
     def __init__(self, shape, Pixel start_pixel,
                  char[:,:] mask = None):
         self._mm, self._nn = shape
-        self._current_pix.col = start_pixel.col
-        self._current_pix.row = start_pixel.row
+        self._current_pix.col = start_pixel._pixel.col
+        self._current_pix.row = start_pixel._pixel.row
 
         self._visited = np.zeros((self._mm, self._nn), dtype='uint8')
         if mask is None:
@@ -35,10 +35,9 @@ cdef class FloodFill:
         return self._pixel_queue.empty()
 
     cdef void _start(self):
-        cdef _Lattice l_visited = _Lattice(self._visited)
         cdef vector[pixel_t] neighbors = Pixel(self._current_pix.row, self._current_pix.col)._neighborhood(True)
 
-        l_visited[self._current_pix] = True
+        self._visited[self._current_pix.row, self._current_pix.row] = True
         self._extend_pixels(neighbors)
 
     cdef Pixel _next_pixel(self):
@@ -50,9 +49,19 @@ cdef class FloodFill:
             self._current_pix = pixel
             self._pixel_queue.pop_front()
             obj_pixel = Pixel(pixel.row, pixel.col)
-            self._extend_pixels(obj_pixel._neighborhood(True))
+            self._extend_pixels(obj_pixel._neighborhood(False))
 
             return obj_pixel
+
+    cdef Pixel _pop_pixel(self):
+        cdef pixel_t pixel
+        pixel = self._pixel_queue.front()
+        # self._current_pix = pixel
+        obj_pixel = Pixel(pixel.row, pixel.col)
+        self._pixel_queue.pop_front()
+        self._extend_pixels(obj_pixel._neighborhood(False))
+
+        return obj_pixel
 
     cdef list_t[pixel_t] get_pixel_queue(self):
         return self._pixel_queue

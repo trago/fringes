@@ -10,3 +10,11 @@ The idea of this package is to offer methods and operations to process fringe pa
 ## Modules
 
 - **psi** has methods and utilities used to demodulate a sequence of phase-shifting fringe patterns. 
+- **unwrap** Methodsfor unwrapping 2D phase maps.
+
+## For developers
+
+Each time you modify a cython *pyx* file you need to compile using *setup.py* script. To do this use the following:
+
+    $ python setup.py build_ext --inplace
+    

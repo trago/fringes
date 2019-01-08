@@ -3,5 +3,4 @@
 __pycache__
 *.*.so
 *.so
-*.cc
 build

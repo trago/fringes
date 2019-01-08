@@ -9,29 +9,6 @@ cimport cython
 
 ctypedef (int, int) point
 
-cdef inline double unwrap_value(double v1, double v2):
-    cdef double wrap_diff = round(v2 - v1)
-    return v2 - wrap_diff
-
-@cython.boundscheck(False) # turn off bounds-checking for entire function
-@cython.wraparound(False)  # turn off negative index wrapping for entire function
-cdef inline list filter_neighborhood(pixel_list neighbors, uint8_t[:, :] mask, uint8_t[:, :] visited):
-    cdef list valid_neighbors = []
-    cdef int mm = mask.shape[0]
-    cdef int nn = mask.shape[1]
-    cdef pixel_t pixel
-    cdef int n
-
-    for n in range(8):  # type: Pixel
-        pixel = neighbors[n]
-        if 0 <= pixel.row < mm and 0 <= pixel.col < nn:
-            if mask[pixel.row, pixel.col]:
-                if not visited[pixel.row, pixel.col]:
-                    visited[pixel.row, pixel.col] = True
-                    valid_neighbors.append(pixel)
-                    # print(pixel)
-    return valid_neighbors
-
 # Note: I can't declare array arguments as memoryviews because it marks an error of wrong number of dimensions
 #       when calling this function
 @cython.boundscheck(False) # turn off bounds-checking for entire function

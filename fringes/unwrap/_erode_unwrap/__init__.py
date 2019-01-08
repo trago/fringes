@@ -1,3 +1,3 @@
 import fringes.pyximportcpp; fringes.pyximportcpp.install(inplace=False)
-from .floodfill import FloodFill
-from .pixel import Pixel
+
+from ._floodfill import floodfill_unwrap

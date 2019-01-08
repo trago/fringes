@@ -57,8 +57,7 @@ def find_inconsistencies(pw: np.ndarray, mask: np.ndarray = None):
     mask: array_like
         2D array
 
-        This function generates a new mask that marking those valid pixels as inconsistent if they are. The new
-        mask contains all the invalid pixels of this provided `mask` plus those found inconsistent.
+        The inconsistencies marked are whithin the masked region
 
     Returns
     -------
@@ -163,11 +162,9 @@ def find_inconsistencies(pw: np.ndarray, mask: np.ndarray = None):
 #   >>> binary_erosion(mask, out).astype(np.uint8, order='C', copy=False)
 #   Raises a MemoryError
 def erode_mask(mask: np.ndarray, iters: int = 1):
-    selem = np.array([[0, 0, 1, 0, 0],
-                      [0, 1, 1, 1, 0],
-                      [1, 1, 1, 1, 1],
-                      [0, 1, 1, 1, 0],
-                      [0, 0, 1, 0, 0]], dtype=np.uint8)
+    selem = np.array([[0, 1, 0],
+                      [1, 1, 1],
+                      [0, 1, 0]], dtype=np.uint8)
     out = binary_erosion(mask, selem)  # type: np.ndarray
     for niter in range(1, iters):
         out = binary_erosion(out, selem)
@@ -177,63 +174,68 @@ def erode_mask(mask: np.ndarray, iters: int = 1):
 def dilating_unwrap(pp: np.ndarray, mask: np.ndarray = None, start_at: Tuple[int, int] = (0, 0), max_iters: int = 30):
     if mask is None:
         mask = np.ones_like(pp, np.uint8)
-    new_mask = find_inconsistencies(pp, mask)
+    inconsistencies = find_inconsistencies(pp, mask)
+    new_mask = inconsistencies.copy()
+    new_mask[mask == 0] = 0
     up = floodfill_unwrap(pp, new_mask, start_at)
     dx, dy = absolute_gradient(up, new_mask)
     print(dx.max(), dy.max())
     for niter in range(1, max_iters):
         if dx.max() < 0.5 and dy.max() < 0.5:
             break
-        new_mask[mask == 0] = 1
-        new_mask = erode_mask(new_mask)
+        inconsistencies = erode_mask(inconsistencies)
+        new_mask[inconsistencies == 0] = 0
         new_mask[mask == 0] = 0
         up = floodfill_unwrap(pp, new_mask, start_at)
         dx, dy = absolute_gradient(up, new_mask)
         print(dx.max(), dy.max())
 
-    return up, new_mask
+    return up, inconsistencies
 
 
 @jit(cache=True, nopython=False)
-def unwrap_shell(pp, up, visited):
+def unwrap_shell(pp, up, visited, mask):
     (mm, nn) = visited.shape
     found = False
-    new_map = visited.copy()
+    visited_copy = visited.copy()
     for n in range(nn):
         for m in range(mm):
-            if visited[m, n] == 0:
-                if m - 1 >= 0:
-                    if visited[m - 1, n] >= 1:
+            if visited[m, n] == 0 and mask[m, n]:
+                if m + 1 >= 0:
+                    if visited[m - 1, n] and mask[m - 1, n]:
                         found = True
-                        up[m, n] = unwrap_value(up[m-1, n], pp[m, n])
-                        new_map[m, n] = 1.0
+                        up[m, n] = unwrap_value(up[m - 1, n], pp[m, n])
+                        visited_copy[m, n] = 1.0
                 if n + 1 < nn:
-                    if visited[m, n + 1] >= 1:
+                    if visited[m, n + 1] and mask[m, n + 1]:
                         found = True
                         up[m, n] = unwrap_value(up[m, n + 1], pp[m, n])
-                        new_map[m, n] = 1.0
-                if m + 1 < mm:
-                    if visited[m + 1, n] >= 1:
+                        visited_copy[m, n] = 1.0
+                if m - 1 < mm:
+                    if visited[m + 1, n] and mask[m + 1, n]:
                         found = True
                         up[m, n] = unwrap_value(up[m + 1, n], pp[m, n])
-                        new_map[m, n] = 1.0
+                        visited_copy[m, n] = 1.0
                 if n - 1 >= 0:
-                    if visited[m, n - 1] >= 1:
+                    if visited[m, n - 1] and mask[m, n - 1]:
                         found = True
                         up[m, n] = unwrap_value(up[m, n - 1], pp[m, n])
-                        new_map[m, n] = 1.0
-    return new_map, found
+                        visited_copy[m, n] = 1.0
+    return visited_copy, found
 
 
-def erode_unwrap(pp: np.ndarray, up: np.ndarray, mask, iters=-1):
-    new_mask, found = unwrap_shell(pp, up, mask)
+def erode_unwrap(pp: np.ndarray, up: np.ndarray, inconsistencies, mask=None, iters=-1):
+    if mask is None:
+        mask = np.ones_like(inconsistencies)
+    erode_inconsistencies, found = unwrap_shell(pp, up, inconsistencies, mask)
+    up_new = up.copy()
 
     n = 0
     while found:
-        new_mask, found = unwrap_shell(pp, up, new_mask)
+        erode_inconsistencies, found = unwrap_shell(pp, up_new, erode_inconsistencies, mask)
         n += 1
-        if n > iters:
-            if iters >= 0:
+        if iters > 0:
+            if n > iters:
                 break
 
-    return up, new_mask
+    return up_new, erode_inconsistencies

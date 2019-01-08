@@ -21,7 +21,7 @@ cdef class Pixel:
     def __str__(self):
         return '({}, {})'.format(self._pixel.row, self._pixel.col)
 
-    def neighborhood(self, shuffle=False):
+    def neighborhood(self, bool shuffle=False):
         cdef list obj_pixels = []
         cdef vector[pixel_t] pixels = self._neighborhood(shuffle)
         cdef int n

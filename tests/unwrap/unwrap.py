@@ -26,10 +26,11 @@ class unwrap(unittest.TestCase):
 
     def test_floodfill(self):
         phase = wavefront((256, 512), {'parabola': 0.0005}, noise={'normal': (0, 0.5)}, normalize=True)
+        print(phase.dtype, phase.shape)
         up = floodfill_unwrap(phase, start_at=(128, 256))
 
-        viewer = CollectionViewer([normalize_range(up), normalize_range(phase)])
-        viewer.show()
+        # viewer = CollectionViewer([normalize_range(up), normalize_range(phase)])
+        # viewer.show()
 
     def test_find_inconsistencies_00(self):
         phase = wavefront((256, 512), {'peaks': 15}, noise={'normal': (0, 0.5)}, normalize=True)
@@ -60,6 +61,22 @@ class unwrap(unittest.TestCase):
         up = floodfill_unwrap(phase, mask, start_at=(128, 128))
         viewer = CollectionViewer([normalize_range(mask),
                                    normalize_range(up),
+                                   normalize_range(phase)])
+        viewer.show()
+
+    def test_find_inconsistencies_03(self):
+        phase = imread('../data/membrane.png', True)
+        mask = imread('../data/membrane_mask.png', True)
+        mask = normalize_range(mask, 0, 1).astype(np.uint8)
+        phase = normalize_range(phase, -.5, .5)
+        phase = wrap(phase)
+
+        inconsistencies = find_inconsistencies(phase, mask)
+        inconsistencies_mask = inconsistencies.copy()
+        inconsistencies_mask[mask == 0] = 0
+        viewer = CollectionViewer([normalize_range(inconsistencies),
+                                   normalize_range(inconsistencies_mask),
+                                   normalize_range(mask),
                                    normalize_range(phase)])
         viewer.show()
 
@@ -123,6 +140,21 @@ class unwrap(unittest.TestCase):
                                    normalize_range(phase)])
         viewer.show()
 
+    def test_dilate_unwrap_04(self):
+        phase = imread('../data/membrane.png', True)
+        mask = imread('../data/membrane_mask.png', True)
+        mask = normalize_range(mask, 0, 1).astype(np.uint8)
+        phase = normalize_range(phase, -.5, .5)
+        phase = wrap(phase)
+
+        up, inconsistencies_dilated = dilating_unwrap(phase, mask, start_at=(225, 350), max_iters=100)
+        inconsistencies = find_inconsistencies(phase)
+        viewer = CollectionViewer([normalize_range(up),
+                                   normalize_range(inconsistencies_dilated),
+                                   normalize_range(inconsistencies),
+                                   normalize_range(phase)])
+        viewer.show()
+
     def test_erode_unwrap_01(self):
         phase = imread('../data/dificult.png', True)
         phase = normalize_range(phase, -0.5, 0.5)*2.005
@@ -130,6 +162,8 @@ class unwrap(unittest.TestCase):
 
         up, mask_result = dilating_unwrap(phase, start_at=(128, 128), max_iters=100)
         up, new_mask = erode_unwrap(phase, up, mask_result)
+
+        print(new_mask.min(), new_mask.max())
 
         viewer = CollectionViewer([normalize_range(up),
                                    normalize_range(mask_result),
@@ -147,5 +181,21 @@ class unwrap(unittest.TestCase):
         viewer = CollectionViewer([normalize_range(up),
                                    normalize_range(mask_result),
                                    normalize_range(new_mask),
+                                   normalize_range(phase)])
+        viewer.show()
+
+    def test_erode_unwrap_03(self):
+        phase = imread('../data/membrane.png', True)
+        mask = imread('../data/membrane_mask.png', True)
+        phase = normalize_range(phase, -0.5, 0.5)
+        mask = normalize_range(mask, 0, 1).astype(np.uint8)
+        phase = wrap(phase)
+
+        up1, inconsistencies = dilating_unwrap(phase, mask, start_at=(225, 350), max_iters=100)
+        up2, mask_result = erode_unwrap(phase, up1, inconsistencies, mask, 0)
+        viewer = CollectionViewer([normalize_range(up1),
+                                   normalize_range(up2),
+                                   normalize_range(mask_result),
+                                   normalize_range(mask),
                                    normalize_range(phase)])
         viewer.show()

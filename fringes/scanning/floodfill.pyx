@@ -54,6 +54,9 @@ cdef class FloodFill:
 
             return obj_pixel
 
+    cdef list_t[pixel_t] get_pixel_queue(self):
+        return self._pixel_queue
+
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     @cython.wraparound(False)  # turn off negative index wrapping for entire function
     cdef void _extend_pixels(self, vector[pixel_t] neighbors):

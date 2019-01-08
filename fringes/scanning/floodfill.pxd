@@ -18,6 +18,7 @@ cdef class FloodFill:
     cdef void _extend_pixels(self, vector[pixel_t] neighbors)
     cpdef bool empty(self)
     cdef bool _is_into(self, pixel_t pix)
+    cdef list_t[pixel_t] get_pixel_queue(self)
 
 cdef class _Lattice:
     cdef char[:, :] _lattice

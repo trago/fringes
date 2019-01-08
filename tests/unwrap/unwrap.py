@@ -26,8 +26,7 @@ class unwrap(unittest.TestCase):
 
     def test_floodfill(self):
         phase = wavefront((256, 512), {'parabola': 0.0005}, noise={'normal': (0, 0.5)}, normalize=True)
-        print(phase.dtype, phase.shape)
-        up = floodfill_unwrap(phase, start_at=(128, 256))
+        up = floodfill_unwrap(phase, start_at=(128, 128))
 
         # viewer = CollectionViewer([normalize_range(up), normalize_range(phase)])
         # viewer.show()

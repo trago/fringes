@@ -1,16 +1,16 @@
 # distutils: language=c++
 # cython: language_level=2
+# distutils: sources = ./fringes/unwrap/_erode_unwrap/floodfill_unwrap.cpp
 import numpy as np
 
 from fringes.scanning.pixel cimport Pixel, pixel_t, pixel_list
 from fringes.scanning.floodfill cimport FloodFill, list_t
 cimport cython
 
-ctypedef unsigned char uint8_t
 ctypedef (int, int) point
 
 cdef inline double unwrap_value(double v1, double v2):
-    wrap_diff = round(v2 - v1)
+    cdef double wrap_diff = round(v2 - v1)
     return v2 - wrap_diff
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
@@ -39,29 +39,17 @@ cdef inline list filter_neighborhood(pixel_list neighbors, uint8_t[:, :] mask, u
 def floodfill_unwrap(pp, mask = None, point start_at = (50, 50)):
     if mask is None:
         mask = np.ones(pp.shape, dtype=np.uint8)
-    cdef Pixel start_pixel = Pixel(start_at[0], start_at[1])
-    cdef FloodFill scanner = FloodFill(pp.shape, start_pixel, mask)
-    cdef uint8_t[:, :] visited = np.zeros(pp.shape, dtype=np.uint8)
     up = np.zeros_like(pp)
-    cdef mview_up = up
-    cdef mview_pp = pp
-    cdef mview_mask = mask
-    cdef list neighbors
+    if not pp.flags['C_CONTIGUOUS']:
+        pp = np.ascontiguousarray(pp)
+    if not mask.flags['C_CONTIGUOUS']:
+        mask = np.ascontiguousarray(mask)
 
-    mview_up[start_pixel._pixel.row, start_pixel._pixel.col] = mview_pp[start_pixel._pixel.row, start_pixel._pixel.col]
-    neighbors = filter_neighborhood(start_pixel._neighborhood(False), mview_mask, visited)
-    cdef pixel_t neighbor
-    for neighbor in neighbors:  # type: Pixel
-        mview_up[neighbor.row, neighbor.col] = unwrap_value(mview_up[start_pixel._pixel.row,
-                                                                                   start_pixel._pixel.col],
-                                                      mview_pp[neighbor.row, neighbor.col])
-    visited[start_pixel._pixel.row, start_pixel._pixel.col] = True
-    cdef Pixel pixel
-    while not scanner.empty():
-        pixel = scanner._pop_pixel()
-        neighbors = filter_neighborhood(pixel._neighborhood(False), mview_mask, visited)
-        for neighbor in neighbors:  # type: Pixel
-            mview_up[neighbor.row,
-                     neighbor.col] = unwrap_value(mview_up[pixel.row, pixel.col],
-                                                  mview_pp[neighbor.row, neighbor.col])
+    cdef double[:, ::1] mview_up = up
+    cdef double[:, ::1] mview_pp = pp
+    cdef uint8_t[:, ::1] mview_mask = mask
+
+    _floodfill_unwrap(&mview_pp[0, 0], &mview_mask[0, 0], &mview_up[0, 0], start_at[0], start_at[1],
+                      mview_pp.shape[0], mview_pp.shape[1])
+
     return up

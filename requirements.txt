@@ -1,5 +1,6 @@
-scikit_image==0.14.1
-numpy==1.15.4
-Cython==0.29.2
-matplotlib==3.0.2
-numba==0.42.0
+scikit_image>=0.17.2
+PyQt5>=5.15.1
+numpy>=1.19.4
+Cython>=0.29.21
+matplotlib>=3.3.3
+numba>=0.51.2

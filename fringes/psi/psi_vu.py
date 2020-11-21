@@ -6,6 +6,7 @@ Phase-shifting VU factorization.
 
 import numpy as np
 from typing import List, Tuple
+import logging
 
 
 def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
@@ -156,7 +157,7 @@ def print_iter_info(iter: int, error: float, error_tol: float,
     if iter % verbose_step == 0:
         notif = '\t{0:04}: Objective accuracy: {1:10.3e} Current accuracy:{2:10.3e}'. \
             format(iter, error_tol, error)
-        print(notif)
+        logging.info(notif)
 
 
 def print_report_info(iter: int, error: float, error_tol: float):

@@ -27,21 +27,21 @@ def gaussian(sigma=10.0, shape=(512, 512)):
 # Dimensions
 M, N = 512, 512
 # Number of fringe patterns
-K = 3
+K = 5
 # Generating the phase that is going to be modulated
-phi = peaks(M,N)*32
+phi = peaks(M,N)*27
 # Generating the phase shifts
 delta = np.random.rand(K)*2*np.pi
 print(delta)
 
 # Modeling background illumination
-background = gaussian(60)*3.7
+background = gaussian(200)*3.7
 # Modeling contrast
-contrast = 0.1 + gaussian(100)
+contrast = 1.1 + gaussian(100)
 # Generating all fringe patterns
 images = [(background + contrast*np.cos(phi + dd)) for dd in delta]
 
-pp = demodulate(images, error_accuracy=1e-8, max_iters=200, verbose=True)
+pp, dc = demodulate(images, error_accuracy=1e-8, max_iters=200, verbose=True)
 
 # Plotting results
 plt.figure()
@@ -51,6 +51,9 @@ plt.subplot(122)
 plt.imshow(images[1], cmap=plt.cm.gray)
 
 plt.figure()
+plt.subplot(121)
 plt.imshow(pp, cmap=plt.cm.gray)
+plt.subplot(122)
+plt.imshow(dc, cmap=plt.cm.gray)
 
 plt.show()

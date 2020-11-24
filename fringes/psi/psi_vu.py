@@ -43,8 +43,8 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
     iter = 1
     for iter in range(1, max_iters):
         matrix_V[:, 0] = np.ones_like(previous_phase)
-        matrix_V[:, 1] = np.cos(previous_phase)
-        matrix_V[:, 2] = -np.sin(previous_phase)
+        #matrix_V[:, 1] = np.cos(previous_phase)
+        #matrix_V[:, 2] = -np.sin(previous_phase)
 
         matrix_U = calc_term_U(matrix_I, matrix_V)
         # matrix_U[:, 0] = np.ones_like(initial_deltas)

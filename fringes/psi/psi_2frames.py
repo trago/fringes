@@ -135,6 +135,6 @@ def demodulate_2steps(image_list: List[np.ndarray], matrix_V: np.ndarray = None)
     :return: a 2D array with the demodulated phase
     """
     images = extend_images(image_list)
-    step, dc_, term_V = calc_step_dc(images, matrix_V, error_accuracy=1e-3, max_iters=25, verbose=False)
+    step, dc_, term_V = calc_step_dc(images, matrix_V, error_accuracy=1e-4, max_iters=25, verbose=False)
 
     return step, dc_, term_V

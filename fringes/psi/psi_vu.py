@@ -7,8 +7,10 @@ Phase-shifting VU factorization.
 import numpy as np
 from typing import List, Tuple, Union
 import logging
+from numba import jit, float64, optional
 
 
+@jit(nopython=True, cache=True)
 def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
                      max_iters: int = 20, matrix_V: np.ndarray=None,
                      verbose: bool = False, verbose_step: int = 5) -> Tuple[np.ndarray, np.ndarray]:
@@ -33,7 +35,7 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
         matrix_U = calc_term_U(matrix_I, matrix_V)
         matrix_V = calc_term_V(matrix_I, matrix_U)
     else:
-        matrix_U = np.vstack([s1_ones, np.cos(initial_deltas), np.sin(initial_deltas)]).T
+        matrix_U = np.vstack((s1_ones, np.cos(initial_deltas), np.sin(initial_deltas))).T
         matrix_V = calc_term_V(matrix_I, matrix_U)
     previous_phase, _ = calc_phase(matrix_V)
 
@@ -54,15 +56,17 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
 
         if error < error_accuracy:
             break
-        if verbose:
-            print_iter_info(iter, error, error_accuracy, verbose_step)
+        # if verbose:
+            # print_iter_info(iter, error, error_accuracy, verbose_step)
 
-    if verbose:
-        print_report_info(iter, error, error_accuracy)
+    # if verbose:
+    #     print_report_info(iter, error, error_accuracy)
 
     return matrix_V, matrix_U
 
 
+@jit(float64[:,:](float64[:,:], optional(float64[:,:])),
+    nopython=True, cache=True)
 def calc_term_U(matrix_I: np.ndarray, factor_V: np.ndarray) -> np.ndarray:
     """
     Given the matrices :math:`\mathbf I` and :math:`\mathbf V`, it computes the matrix :math:`\mathbf U`.
@@ -70,12 +74,14 @@ def calc_term_U(matrix_I: np.ndarray, factor_V: np.ndarray) -> np.ndarray:
     :param factor_V:
     :return:
     """
-    aux_Ainv = np.linalg.inv(factor_V.T @ factor_V)
-    factor_U = aux_Ainv @ factor_V.T @ matrix_I
+    aux_Ainv = np.linalg.inv(factor_V.transpose() @ factor_V)
+    factor_U = aux_Ainv @ factor_V.transpose() @ matrix_I
 
-    return factor_U.T
+    return factor_U.transpose()
 
 
+@jit(float64[:,:](float64[:,:], optional(float64[:,:])),
+    nopython=True, cache=True)
 def calc_term_V(matrix_I: np.ndarray, factor_U: np.ndarray) -> np.ndarray:
     """
     Given the matrices :math:`\mathbf I` and :math:`\mathbf U`, it computes the matrix :math:`\mathbf V`.
@@ -90,6 +96,7 @@ def calc_term_V(matrix_I: np.ndarray, factor_U: np.ndarray) -> np.ndarray:
     return factor_V
 
 
+@jit(nopython=True, cache=True)
 def create_matrix(image_list: List[np.ndarray]) -> np.ndarray:
     """
     Given a list of image :math:`N` images, it construct a matrix with dimension :math:`M\times N`.
@@ -107,11 +114,12 @@ def create_matrix(image_list: List[np.ndarray]) -> np.ndarray:
     for k, img in enumerate(image_list):
         if shape != img.shape:
             raise TypeError('Images in the list must have the same dimension')
-        matrix_images[:, k] = img.reshape(1, shape[0] * shape[1])
+        matrix_images[:, k] = img.reshape(shape[0] * shape[1])
 
     return matrix_images
 
 
+@jit(nopython=True, cache=True)
 def calc_phase(matrix_V: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
     Computes the phase from the matrix matrix_V.
@@ -157,6 +165,7 @@ def print_iter_info(iter: int, error: float, error_tol: float,
         logging.log(logging.INFO, notif)
 
 
+@jit(cache=True)
 def print_report_info(iter: int, error: float, error_tol: float):
     """
     Prints a summary of the iteration process.

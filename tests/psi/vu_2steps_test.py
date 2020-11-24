@@ -13,31 +13,31 @@ K = 3
 shape = (256, 512)
 # Generating the phase shifts
 # delta = np.random.rand(K) * 2 * np.pi
-delta = [0.0, 1.36, 2.36850563, -0.5]
+delta = [0.0, 1.36]
 print(delta)
 
 phase = functions.ramp(shape[0], shape[1], 6., 1)
 #phase += functions.peaks(shape[0], shape[1])*17
-#phase += functions.parabola(shape[0], shape[1])*0.0005
-dc = 1 + functions.gaussian(300, shape) * 5.0
-contrast = 1.0 + functions.gaussian(300, shape)
-noise = .0
+phase = functions.parabola(shape[0], shape[1])*0.0004
+dc = 1 + functions.gaussian(300, shape) * 1.0
+contrast = functions.gaussian(190, shape)*10
+noise = 1.5
 
 image_list = [dc + contrast * np.cos(phase + d) + np.random.randn(*shape) * noise for d in delta]
 
-step, dc_, _ = demodulate_2steps(image_list)
-dc_ = resize(dc_, image_list[0].shape)
-
-img0 = image_list[0] - dc_
-img1 = image_list[1] - dc_
-
-pp = calc_phase_2steps(img0, img1, step)
+step, dc_, pp = demodulate_2frames(image_list, patch_size=64)
 
 print(f"dc_ (min, max): ({dc_.min()}, {dc_.max()})")
 print(f"dc (min, max): ({dc.min()}, {dc.max()})")
 print(f"step: {np.arctan2(np.sin(step), np.cos(step))}")
 
 # Plotting results
+
+plt.figure()
+plt.subplot(121)
+plt.imshow(image_list[0], cmap=plt.cm.gray)
+plt.subplot(122)
+plt.imshow(image_list[1], cmap=plt.cm.gray)
 
 plt.figure()
 plt.subplot(121)

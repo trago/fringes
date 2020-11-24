@@ -18,14 +18,14 @@ print(delta)
 
 phase = functions.ramp(shape[0], shape[1], 6., 1)
 #phase += functions.peaks(shape[0], shape[1])*17
-phase = functions.parabola(shape[0], shape[1])*0.0004
+phase = functions.parabola(shape[0], shape[1])*0.0008
 dc = 1 + functions.gaussian(300, shape) * 1.0
 contrast = functions.gaussian(190, shape)*10
 noise = 1.5
 
 image_list = [dc + contrast * np.cos(phase + d) + np.random.randn(*shape) * noise for d in delta]
 
-step, dc_, pp = demodulate_2frames(image_list, patch_size=64)
+step, dc_, pp = demodulate_2frames(image_list, patch_size=24)
 
 print(f"dc_ (min, max): ({dc_.min()}, {dc_.max()})")
 print(f"dc (min, max): ({dc.min()}, {dc.max()})")

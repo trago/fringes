@@ -59,8 +59,8 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
         # if verbose:
             # print_iter_info(iter, error, error_accuracy, verbose_step)
 
-    # if verbose:
-    #     print_report_info(iter, error, error_accuracy)
+    if verbose:
+        print_report_info(iter, error, error_accuracy)
 
     return matrix_V, matrix_U
 
@@ -165,7 +165,7 @@ def print_iter_info(iter: int, error: float, error_tol: float,
         logging.log(logging.INFO, notif)
 
 
-@jit(cache=True)
+@jit(nopython=True, cache=True)
 def print_report_info(iter: int, error: float, error_tol: float):
     """
     Prints a summary of the iteration process.
@@ -175,11 +175,9 @@ def print_report_info(iter: int, error: float, error_tol: float):
     :return: None
     """
     if error < error_tol:
-        print('Process finished with relative error = {0:10.4e}, iterations = {1}'.
-              format(error, iter))
+        print("Process finished with iterations = " + str(iter))
     else:
-        print('Process finished by reaching the maximum number of iterations with error = {0:10.4e}'.
-              format(error))
+        print("Process finished by reaching the maximum number of iterations = " + str(iter))
 
 
 def demodulate(image_list: List[np.ndarray], error_accuracy: float = 1e-3,

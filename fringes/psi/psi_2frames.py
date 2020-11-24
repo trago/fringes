@@ -50,7 +50,7 @@ def _demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarra
             step_ = np.arctan2(np.sin(step_), np.cos(step_))
             step += np.abs(step_)
             cont += 1
-        for n in range(size_n - patch_size - 1, -1, -2):
+        for n in range(size_n - patch_size - 1, -1, -4):
             images = [image[m + 4:m + 4 + patch_size, n:n + patch_size] for image in image_list]
             step_, dc_, matrix_V = demodulate_2steps(images, matrix_V)
             dc[m + 4:m + 4 + patch_size - 2, n:n + patch_size - 2] = dc_

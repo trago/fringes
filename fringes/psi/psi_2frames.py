@@ -42,8 +42,8 @@ def _demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarra
     step = 0
     matrix_V: Union[np.ndarray, None] = None
     cont = 0
-    scan_step = 4
-    for m in range(0, size_m - patch_size, scan_step*2):
+    scan_step = 2
+    for m in range(0, size_m - patch_size, scan_step * 2):
         for n in range(0, size_n - patch_size, scan_step):
             images = [image[m:m + patch_size, n:n + patch_size] for image in image_list]
             step_, dc_, matrix_V = demodulate_2steps(images, matrix_V)
@@ -52,9 +52,9 @@ def _demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarra
             step += np.abs(step_)
             cont += 1
         for n in range(size_n - patch_size - 1, -1, -scan_step):
-            images = [image[m + 4:m + 4 + patch_size, n:n + patch_size] for image in image_list]
+            images = [image[m + scan_step:m + scan_step + patch_size, n:n + patch_size] for image in image_list]
             step_, dc_, matrix_V = demodulate_2steps(images, matrix_V)
-            dc[m + 4:m + 4 + patch_size - 2, n:n + patch_size - 2] = dc_
+            dc[m + scan_step:m + scan_step + patch_size - 2, n:n + patch_size - 2] = dc_
             step_ = np.arctan2(np.sin(step_), np.cos(step_))
             step += np.abs(step_)
             cont += 1

@@ -18,7 +18,7 @@ print(delta)
 
 phase = functions.ramp(shape[0], shape[1], 6., 1)
 phase = functions.peaks(shape[0], shape[1])*10
-# phase = functions.parabola(shape[0], shape[1])*0.0008
+#phase = functions.parabola(shape[0], shape[1])*0.0008
 dc = 1 + functions.gaussian(300, shape) * 1.0
 contrast = functions.gaussian(190, shape)*10
 noise = 1.05

@@ -5,7 +5,7 @@ from skimage.transform import resize
 from numba import jit, typed
 
 
-def demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarray:
+def demodulate(image_list: List[np.ndarray], patch_size: int=24) -> np.ndarray:
     """
     Given a list of fringe pattern images and the phase shift or step, recovers the modulating phase using the VU
     model.

@@ -35,9 +35,9 @@ delta = np.random.rand(K)*2*np.pi
 print(delta)
 
 # Modeling background illumination
-background = gaussian(200)*3.7
+background = 5 - gaussian(30)*3.7
 # Modeling contrast
-contrast = 1.1 + gaussian(100)
+contrast = 1.1 + gaussian(60)*10
 # Generating all fringe patterns
 images = [(background + contrast*np.cos(phi + dd)) for dd in delta]
 

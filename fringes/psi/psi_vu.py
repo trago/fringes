@@ -12,7 +12,7 @@ from numba import jit, float64, optional
 
 @jit(nopython=True, cache=True)
 def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
-                     max_iters: int = 20, matrix_V: np.ndarray=None,
+                     max_iters: int = 20, matrix_V: np.ndarray = None,
                      verbose: bool = False, verbose_step: int = 5) -> Tuple[np.ndarray, np.ndarray]:
     """
     Finds the factorization :math:`\mathbf V\mathbf U` of phase-shifting fringe patterns given the matrix
@@ -47,7 +47,6 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
         matrix_V[:, 2] = -np.sin(previous_phase)
 
         matrix_U = calc_term_U(matrix_I, matrix_V)
-        # matrix_U[:, 0] = np.ones_like(initial_deltas)
         matrix_V = calc_term_V(matrix_I, matrix_U)
 
         phase, _ = calc_phase(matrix_V)
@@ -57,7 +56,7 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
         if error < error_accuracy:
             break
         # if verbose:
-            # print_iter_info(iter, error, error_accuracy, verbose_step)
+        # print_iter_info(iter, error, error_accuracy, verbose_step)
 
     if verbose:
         print_report_info(iter, error, error_accuracy)
@@ -65,8 +64,8 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
     return matrix_V, matrix_U
 
 
-@jit(float64[:,:](float64[:,:], optional(float64[:,:])),
-    nopython=True, cache=True)
+@jit(float64[:, :](float64[:, :], optional(float64[:, :])),
+     nopython=True, cache=True)
 def calc_term_U(matrix_I: np.ndarray, factor_V: np.ndarray) -> np.ndarray:
     """
     Given the matrices :math:`\mathbf I` and :math:`\mathbf V`, it computes the matrix :math:`\mathbf U`.
@@ -80,8 +79,8 @@ def calc_term_U(matrix_I: np.ndarray, factor_V: np.ndarray) -> np.ndarray:
     return factor_U.transpose()
 
 
-@jit(float64[:,:](float64[:,:], optional(float64[:,:])),
-    nopython=True, cache=True)
+@jit(float64[:, :](float64[:, :], optional(float64[:, :])),
+     nopython=True, cache=True)
 def calc_term_V(matrix_I: np.ndarray, factor_U: np.ndarray) -> np.ndarray:
     """
     Given the matrices :math:`\mathbf I` and :math:`\mathbf U`, it computes the matrix :math:`\mathbf V`.

@@ -5,7 +5,7 @@ from skimage.transform import resize
 from numba import jit, typed
 
 
-def demodulate(image_list: List[np.ndarray], patch_size: int=24) -> np.ndarray:
+def demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarray:
     """
     Given a list of fringe pattern images and the phase shift or step, recovers the modulating phase using the VU
     model.
@@ -42,19 +42,20 @@ def _demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarra
     step = 0
     matrix_V: Union[np.ndarray, None] = None
     cont = 0
-    scan_step = 2
+    scan_step = 1
     for m in range(0, size_m - patch_size, scan_step * 2):
         for n in range(0, size_n - patch_size, scan_step):
             images = [image[m:m + patch_size, n:n + patch_size] for image in image_list]
             step_, dc_, matrix_V = demodulate_2steps(images, matrix_V)
-            dc[m:m + patch_size - 2, n:n + patch_size - 2] = dc_
+            dc[m, n] = dc_
             step_ = np.arctan2(np.sin(step_), np.cos(step_))
             step += np.abs(step_)
             cont += 1
+        # nn = n
         for n in range(size_n - patch_size - 1, -1, -scan_step):
             images = [image[m + scan_step:m + scan_step + patch_size, n:n + patch_size] for image in image_list]
             step_, dc_, matrix_V = demodulate_2steps(images, matrix_V)
-            dc[m + scan_step:m + scan_step + patch_size - 2, n:n + patch_size - 2] = dc_
+            dc[m + scan_step, n] = dc_
             step_ = np.arctan2(np.sin(step_), np.cos(step_))
             step += np.abs(step_)
             cont += 1
@@ -62,8 +63,7 @@ def _demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarra
 
     step /= cont
 
-    return step, dc[:m + patch_size - 2, :n + patch_size - 2]
-
+    return step, dc[:patch_size, :patch_size]
 
 @jit(nopython=True, cache=True)
 def extend_images(image_list: List[np.ndarray]) -> List[np.ndarray]:
@@ -77,7 +77,6 @@ def extend_images(image_list: List[np.ndarray]) -> List[np.ndarray]:
     return image_list
 
 
-@jit(nopython=True, cache=True)
 def calc_phase_2steps(image0, image1, step):
     return np.arctan2(image0 * np.sin(step), image0 * np.cos(step) - image1)
 
@@ -103,9 +102,10 @@ def calc_step_dc(image_list: List[np.ndarray], matrix_V: np.ndarray = None, erro
                                       verbose, verbose_step)
     steps = calc_shifts(term_U)
     a = term_U[:, 0].mean()
+    #dc = term_V[:, 0] * a
 
     return steps[1] - steps[0], \
-           term_V[:, 0].copy().reshape(image_list[0].shape) * a - 1, term_V
+           a, term_V
 
 
 @jit(nopython=True, cache=True)

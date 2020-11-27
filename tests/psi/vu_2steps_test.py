@@ -13,15 +13,15 @@ K = 3
 shape = (256, 512)
 # Generating the phase shifts
 # delta = np.random.rand(K) * 2 * np.pi
-delta = [0.0, 1.36]
+delta = [0.0, 1.]
 print(delta)
 
 phase = functions.ramp(shape[0], shape[1], 6., 1)
 phase = functions.peaks(shape[0], shape[1])*10
 #phase = functions.parabola(shape[0], shape[1])*0.0008
-dc = 1 + functions.gaussian(300, shape) * 1.0
-contrast = functions.gaussian(190, shape)*10
-noise = 1.05
+dc = functions.gaussian(30, shape) * 1.0
+contrast = 1 #functions.gaussian(600, shape)*10 + 1
+noise = .05
 
 image_list = [dc + contrast * np.cos(phase + d) + np.random.randn(*shape) * noise for d in delta]
 

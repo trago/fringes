@@ -7,7 +7,7 @@ Phase-shifting VU factorization.
 import numpy as np
 from typing import List, Tuple, Union
 import logging
-from numba import jit, float64, optional
+from numba import jit, float64, optional, typed
 
 
 @jit(nopython=True, cache=True)
@@ -42,11 +42,11 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
     error = 1.0
     iter = 1
     for iter in range(1, max_iters):
-        matrix_V[:, 0] = np.ones_like(previous_phase)
         matrix_V[:, 1] = np.cos(previous_phase)
         matrix_V[:, 2] = -np.sin(previous_phase)
 
         matrix_U = calc_term_U(matrix_I, matrix_V)
+        matrix_U[:, 0] = np.ones_like(initial_deltas)
         matrix_V = calc_term_V(matrix_I, matrix_U)
 
         phase, _ = calc_phase(matrix_V)
@@ -73,8 +73,9 @@ def calc_term_U(matrix_I: np.ndarray, factor_V: np.ndarray) -> np.ndarray:
     :param factor_V:
     :return:
     """
-    aux_Ainv = np.linalg.inv(factor_V.transpose() @ factor_V)
-    factor_U = aux_Ainv @ factor_V.transpose() @ matrix_I
+    factor_V_t = factor_V.transpose().copy()
+    aux_Ainv = np.linalg.inv(factor_V_t @ factor_V)
+    factor_U = aux_Ainv @ factor_V_t @ matrix_I
 
     return factor_U.transpose()
 
@@ -195,9 +196,12 @@ def demodulate(image_list: List[np.ndarray], error_accuracy: float = 1e-3,
     :param verbose_step: print messages each *step* iteration
     :return: a 2D array with the obtained modulated phase
     """
-    matrix_form = create_matrix(image_list)
+
+    images = typed.List()
+    [images.append(image) for image in image_list]
+    matrix_form = create_matrix(images)
     if steps is None:
-        term_V, term_U = vu_factorization(matrix_form, error_accuracy, max_iters, verbose, verbose_step)
+        term_V, term_U = vu_factorization(matrix_form, error_accuracy, max_iters, None, verbose, verbose_step)
         phase, dc = calc_phase(term_V)
 
         return phase.reshape(image_list[0].shape), dc.reshape(image_list[0].shape)

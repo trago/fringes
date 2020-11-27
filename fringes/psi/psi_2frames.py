@@ -1,6 +1,6 @@
 import numpy as np
 from typing import List, Tuple, Union
-from .psi_vu import create_matrix, vu_factorization
+from .psi_vu import create_matrix, vu_factorization, calc_phase
 from skimage.transform import resize
 from numba import jit, typed
 
@@ -47,7 +47,13 @@ def _demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarra
         for n in range(0, size_n - patch_size, scan_step):
             images = [image[m:m + patch_size, n:n + patch_size] for image in image_list]
             step_, dc_, matrix_V = demodulate_2steps(images, matrix_V)
-            dc[m, n] = dc_
+            dc[m, n] = (matrix_V[:, 0] * dc_ - 1).mean()
+
+            pp, _ = calc_phase(matrix_V)
+            matrix_V[:, 0] = np.ones_like(pp)
+            matrix_V[:, 1] = np.cos(pp)
+            matrix_V[:, 2] = -np.sin(pp)
+
             step_ = np.arctan2(np.sin(step_), np.cos(step_))
             step += np.abs(step_)
             cont += 1
@@ -55,7 +61,13 @@ def _demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarra
         for n in range(size_n - patch_size - 1, -1, -scan_step):
             images = [image[m + scan_step:m + scan_step + patch_size, n:n + patch_size] for image in image_list]
             step_, dc_, matrix_V = demodulate_2steps(images, matrix_V)
-            dc[m + scan_step, n] = dc_
+            dc[m + scan_step, n] = (matrix_V[:, 0] * dc_ - 1).mean()
+
+            pp, _ = calc_phase(matrix_V)
+            matrix_V[:, 0] = np.ones_like(pp)
+            matrix_V[:, 1] = np.cos(pp)
+            matrix_V[:, 2] = -np.sin(pp)
+
             step_ = np.arctan2(np.sin(step_), np.cos(step_))
             step += np.abs(step_)
             cont += 1
@@ -65,14 +77,15 @@ def _demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarra
 
     return step, dc[:patch_size, :patch_size]
 
+
 @jit(nopython=True, cache=True)
 def extend_images(image_list: List[np.ndarray]) -> List[np.ndarray]:
     image_list = [image_list[0][2:, 2:].copy(), image_list[1][2:, 2:].copy(),
-                  image_list[0][0:-2, 0:-2].copy(), image_list[1][0:-2, 0:-2].copy(),
-                  image_list[0][2:, :-2].copy(), image_list[1][2:, :-2].copy(),
-                  image_list[0][:-2, 2:].copy(), image_list[1][:-2, 2:].copy(),
-                  image_list[0][:-2, 2:].copy(), image_list[1][:-2, 2:].copy(),
-                  image_list[0][1:-1, 1:-1].copy(), image_list[1][1:-1, 1:-1].copy()]
+                  image_list[0][0:-2, 0:-2].copy(), image_list[1][0:-2, 0:-2].copy()]
+                  # image_list[0][2:, :-2].copy(), image_list[1][2:, :-2].copy(),
+                  # image_list[0][:-2, 2:].copy(), image_list[1][:-2, 2:].copy(),
+                  # image_list[0][:-2, 2:].copy(), image_list[1][:-2, 2:].copy(),
+                  # image_list[0][1:-1, 1:-1].copy(), image_list[1][1:-1, 1:-1].copy()]
 
     return image_list
 
@@ -102,7 +115,7 @@ def calc_step_dc(image_list: List[np.ndarray], matrix_V: np.ndarray = None, erro
                                       verbose, verbose_step)
     steps = calc_shifts(term_U)
     a = term_U[:, 0].mean()
-    #dc = term_V[:, 0] * a
+    # dc = term_V[:, 0] * a
 
     return steps[1] - steps[0], \
            a, term_V

@@ -28,7 +28,7 @@ def demodulate(image_list: List[np.ndarray], patch_size: int = 24) -> np.ndarray
     dc = resize(dc, images[0].shape)
     img0 = image_list[0] - dc
     img1 = image_list[1] - dc
-    pp = calc_phase_2steps(img0, img1, step)
+    pp = phase_2steps(img0, img1, step)
 
     return step, dc, pp
 
@@ -77,7 +77,7 @@ def extend_images(image_list: List[np.ndarray]) -> List[np.ndarray]:
     return image_list
 
 
-def calc_phase_2steps(image0, image1, step):
+def phase_2steps(image0, image1, step):
     return np.arctan2(image0 * np.sin(step), image0 * np.cos(step) - image1)
 
 
@@ -135,6 +135,6 @@ def demodulate_2steps(image_list: List[np.ndarray], matrix_V: np.ndarray = None)
     :return: a 2D array with the demodulated phase
     """
     images = extend_images(image_list)
-    step, dc_, term_V = calc_step_dc(images, matrix_V, error_accuracy=1e-4, max_iters=25, verbose=False)
+    step, dc_, term_V = calc_step_dc(images, matrix_V, error_accuracy=1e-4, max_iters=50, verbose=False)
 
     return step, dc_, term_V

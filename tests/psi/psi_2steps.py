@@ -7,18 +7,38 @@ from matplotlib import pylab as plt
 from fringes.psi import *
 from fringes.simulations import functions
 from skimage.filters import gaussian
+import skimage.io as ski_io
 from fringes.psi import psi_vu2
+from typing import Union, List, Tuple
 
 
 def linear_map(image, min, max, a, b):
     return (image - min) * (b - a) / (max - min) + a
 
 
+def apply_mask_to_vec(image: np.ndarray, mask: np.ndarray):
+    image = image[mask == 1]
+    return image
+
+
+def vec_to_mask(mask: np.ndarray, vec_img):
+    image = np.zeros(shape)
+    image[mask == 1] = vec_img
+    return image
+
+
 def create_matrix(dc, image_list):
     if (len(image_list) == 2):
-        image_list.insert(0, dc)
-    else:
+        if isinstance(image_list, tuple):
+            image_list = (dc,) + image_list
+        elif isinstance(image_list, list):
+            image_list = [dc] + image_list
+        else:
+            raise TypeError("Parameter image_list: A list or tuple is expected")
+    elif len(image_list) > 2:
         image_list[0] = dc
+    else:
+        raise IndexError(f"Parameter image_list: len(image_list) must be >= 2, current value = {len(image_list)}")
     image_list = map(lambda image: image.flatten(), image_list)
     matrix = np.vstack(tuple(image_list)).T
 
@@ -38,56 +58,77 @@ def calc_phase(matrix_I, delta):
     return magn * np.cos(pp), magn * np.sin(pp), pp
 
 
-def approximate_dc(image, size=64):
-    ones_response = gaussian(np.ones_like(image), size, mode='constant')
-    dc = gaussian(image, size, mode='constant') / ones_response
+def approximate_dc(image_list, size=64) -> np.ndarray:
+    ones_response = gaussian(np.ones_like(image_list[0]), size, mode='constant')
 
-    return dc  # *ones_response.max()
+    dc = gaussian(image_list[0], size, mode='constant') / ones_response
+    for n in range(1, len(image_list)):
+        dc += gaussian(image_list[n], size, mode='constant') / ones_response
+
+    return dc / len(image_list)
+
+
+def two_frames_phase(image_list: Union[List[np.ndarray], Tuple[np.ndarray]],
+                     dc_kernel: float = 64, blur_kernel: float = 0.5) \
+        -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if len(image_list) < 2:
+        raise IndexError("The image list mist have at least two images")
+
+    images = map(lambda image: image.astype(dtype=float) if image.dtype != float else image,
+                 image_list)
+    if blur_kernel > 0:
+        images = map(lambda image: gaussian(image, blur_kernel), images)
+    images = tuple(images)
+
+    dc = approximate_dc(images, dc_kernel)
+    image_matrix = create_matrix(dc, images)
+
+    mat_v, mat_u = psi_vu2.vu_factorization(image_matrix, error_accuracy=1e-16, verbose=True)
+    pp = np.arctan2(-mat_v[:, 2], mat_v[:, 1])
+    steps = np.arctan2(-mat_u[:, 2], mat_u[:, 1])
+    shape = image_list[0].shape
+
+    return pp.reshape(shape), steps[1:], mat_v[:, 0].reshape(shape)
 
 
 # Number of fringe patterns
 K = 3
-shape = (128, 256)
+shape = (256, 512)
 # Generating the phase shifts
 # delta = np.random.rand(K) * 2 * np.pi
-delta = [0.0, 1.23]
+delta = [0.0, 1.57]
 print(delta)
 
 phase = functions.ramp(shape[0], shape[1], 6., 1)
 phase = functions.peaks(shape[0], shape[1]) * 20
-# phase = functions.parabola(shape[0], shape[1])*0.0008
-dc = 5 - functions.gaussian(50, phase.shape)*3
-contrast = 4.0 + 15*functions.gaussian(30, phase.shape) + 1
-noise = 1.5
+phase = functions.parabola(shape[0], shape[1]) * 0.00008
+dc = 5 - functions.gaussian(200, phase.shape) * 10
+contrast = 5.0 + 15 * functions.gaussian(140, phase.shape) + 1
+noise = .5
 
 image_list = [dc + contrast * np.cos(phase + d) + np.random.randn(*shape) * noise for d in delta]
+I1 = ski_io.imread('../data/I1.png', as_gray=True)
+I2 = ski_io.imread('../data/I2.png', as_gray=True)
+image_list = (I1, I2)
 
-dc_ = approximate_dc(image_list[1])
-matrix_images = create_matrix(np.ones_like(phase), image_list)
+pp, steps, dc_ = two_frames_phase(image_list, dc_kernel=64, blur_kernel=1.5)
 
-matrix_V, matrix_U = psi_vu2.vu_factorization(matrix_images, error_accuracy=1e-16, verbose=True)
-
-pp = np.arctan2(-matrix_V[:, 2], matrix_V[:, 1])
 cc = np.cos(pp)
 ss = np.sin(pp)
 
-# Plotting result
-pp = pp.reshape(phase.shape)
-img0 = cc.reshape(phase.shape)
-img1 = ss.reshape(phase.shape)
-dc_ = matrix_V[:,0].reshape(phase.shape)
-
-# dc_ = image_list[1] - img0*np.cos(d)
+img0 = cc
+img1 = ss
 
 print(f"img0: ({img0.min(), img0.max()})")
 print(f"img1: ({img1.min(), img1.max()})")
 print(f"dc_: ({dc_.min(), dc_.max()})")
+print(f"steps: {steps}")
 
 plt.figure()
 plt.subplot(221)
-plt.imshow(image_list[1], cmap=plt.cm.gray)
+plt.imshow(image_list[0], cmap=plt.cm.gray)
 plt.subplot(222)
-plt.imshow(image_list[2], cmap=plt.cm.gray)
+plt.imshow(image_list[1], cmap=plt.cm.gray)
 plt.subplot(223)
 plt.imshow(img0, cmap=plt.cm.gray)
 plt.subplot(224)

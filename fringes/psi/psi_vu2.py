@@ -34,7 +34,7 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
     iter = 1
     for iter in range(1, max_iters):
         phase, _ = calc_phase(matrix_V)
-        matrix_V[:, 0] = np.ones_like(phase)
+        # matrix_V[:, 0] = np.ones_like(phase)
         matrix_V[:, 1] = np.cos(phase)
         matrix_V[:, 2] = -np.sin(phase)
         matrix_U = calc_term_U(matrix_I, matrix_V)
@@ -58,6 +58,7 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
         print_report_info(iter, error, error_accuracy)
 
     return matrix_V, matrix_U
+
 
 def calc_phase(matrix_V: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """

@@ -22,12 +22,12 @@ def apply_mask_to_vec(image: np.ndarray, mask: np.ndarray):
 
 
 def vec_to_mask(mask: np.ndarray, vec_img):
-    image = np.zeros(shape)
+    image = np.zeros(mask.shape)
     image[mask == 1] = vec_img
     return image
 
 
-def create_matrix(dc, image_list):
+def create_matrix(dc, image_list, mask: np.ndarray=None):
     if (len(image_list) == 2):
         if isinstance(image_list, tuple):
             image_list = (dc,) + image_list
@@ -39,10 +39,19 @@ def create_matrix(dc, image_list):
         image_list[0] = dc
     else:
         raise IndexError(f"Parameter image_list: len(image_list) must be >= 2, current value = {len(image_list)}")
-    image_list = map(lambda image: image.flatten(), image_list)
+    if mask is None:
+        image_list = map(lambda image: image.flatten(), image_list)
+    else:
+        image_list = map(lambda image: apply_mask_to_vec(image, mask), image_list)
     matrix = np.vstack(tuple(image_list)).T
 
     return matrix
+
+
+def img_reshape(mask: Union[Tuple[int, int], np.ndarray], img: np.ndarray) -> np.ndarray:
+    if isinstance(mask, tuple) or isinstance(mask, list):
+        return img.reshape(mask)
+    return vec_to_mask(mask, img)
 
 
 def calc_phase(matrix_I, delta):
@@ -68,8 +77,8 @@ def approximate_dc(image_list, size=64) -> np.ndarray:
     return dc / len(image_list)
 
 
-def two_frames_phase(image_list: Union[List[np.ndarray], Tuple[np.ndarray]],
-                     dc_kernel: float = 64, blur_kernel: float = 0.5) \
+def two_frames_phase(image_list: Union[List[np.ndarray], Tuple[np.ndarray]], mask: np.ndarray=None,
+                     dc_kernel: float = 64, blur_kernel: float = 0.5, vu_iters=50) \
         -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     if len(image_list) < 2:
         raise IndexError("The image list mist have at least two images")
@@ -81,14 +90,19 @@ def two_frames_phase(image_list: Union[List[np.ndarray], Tuple[np.ndarray]],
     images = tuple(images)
 
     dc = approximate_dc(images, dc_kernel)
-    image_matrix = create_matrix(dc, images)
+    image_matrix = create_matrix(dc, images, mask)
 
-    mat_v, mat_u = psi_vu2.vu_factorization(image_matrix, error_accuracy=1e-16, verbose=True)
+    mat_v, mat_u = psi_vu2.vu_factorization(image_matrix, error_accuracy=1e-6, verbose=True, max_iters=vu_iters)
     pp = np.arctan2(-mat_v[:, 2], mat_v[:, 1])
     steps = np.arctan2(-mat_u[:, 2], mat_u[:, 1])
-    shape = image_list[0].shape
 
-    return pp.reshape(shape), steps[1:], mat_v[:, 0].reshape(shape)
+    if mask is None:
+        shape = image_list[0].shape
+        return pp.reshape(shape), steps[1:], mat_v[:, 0].reshape(shape)
+    else:
+        pp = img_reshape(mask, pp)
+        dc = img_reshape(mask, mat_v[:, 0])
+        return pp, steps[1:], dc
 
 
 # Number of fringe patterns
@@ -109,9 +123,10 @@ noise = .5
 image_list = [dc + contrast * np.cos(phase + d) + np.random.randn(*shape) * noise for d in delta]
 I1 = ski_io.imread('../data/I1.png', as_gray=True)
 I2 = ski_io.imread('../data/I2.png', as_gray=True)
+mask = ski_io.imread('../data/p1_mask.png', as_gray=True)
 image_list = (I1, I2)
 
-pp, steps, dc_ = two_frames_phase(image_list, dc_kernel=64, blur_kernel=1.5)
+pp, steps, dc_ = two_frames_phase(image_list, mask=None, dc_kernel=23, blur_kernel=3, vu_iters=100)
 
 cc = np.cos(pp)
 ss = np.sin(pp)
@@ -125,19 +140,15 @@ print(f"dc_: ({dc_.min(), dc_.max()})")
 print(f"steps: {steps}")
 
 plt.figure()
-plt.subplot(221)
+plt.subplot(121)
 plt.imshow(image_list[0], cmap=plt.cm.gray)
-plt.subplot(222)
+plt.subplot(122)
 plt.imshow(image_list[1], cmap=plt.cm.gray)
-plt.subplot(223)
-plt.imshow(img0, cmap=plt.cm.gray)
-plt.subplot(224)
-plt.imshow(img1, cmap=plt.cm.gray)
 
 plt.figure()
-plt.subplot(211)
+plt.subplot(121)
 plt.imshow(pp, cmap=plt.cm.gray)
-plt.subplot(212)
+plt.subplot(122)
 plt.imshow(dc_, cmap=plt.cm.gray)
 
 plt.show()

@@ -27,16 +27,17 @@ def vec_to_mask(mask: np.ndarray, vec_img):
     return image
 
 
-def create_matrix(dc, image_list, mask: np.ndarray=None):
+def create_matrix(dc, image_list, mask: np.ndarray = None):
     if (len(image_list) == 2):
         if isinstance(image_list, tuple):
-            image_list = (dc,) + image_list
+            image_list = dc + image_list
         elif isinstance(image_list, list):
-            image_list = [dc] + image_list
+            image_list = [dc[0], dc[1]] + image_list
         else:
             raise TypeError("Parameter image_list: A list or tuple is expected")
-    elif len(image_list) > 2:
-        image_list[0] = dc
+    elif len(image_list) > 3:
+        image_list[0] = dc[0]
+        image_list[1] = dc[1]
     else:
         raise IndexError(f"Parameter image_list: len(image_list) must be >= 2, current value = {len(image_list)}")
     if mask is None:
@@ -67,24 +68,28 @@ def calc_phase(matrix_I, delta):
     return magn * np.cos(pp), magn * np.sin(pp), pp
 
 
-def approximate_dc(image_list, size=64) -> np.ndarray:
+def approximate_dc(image_list, size=64) -> Tuple[np.ndarray, np.ndarray]:
     ones_response = gaussian(np.ones_like(image_list[0]), size, mode='constant')
 
-    dc = gaussian(image_list[0], size, mode='constant') / ones_response
-    for n in range(1, len(image_list)):
-        dc += gaussian(image_list[n], size, mode='constant') / ones_response
+    dc = map(lambda image: gaussian(image, size, mode='constant')/ones_response, image_list)
 
-    return dc / len(image_list)
+    return tuple(dc)
 
 
-def two_frames_phase(image_list: Union[List[np.ndarray], Tuple[np.ndarray]], mask: np.ndarray=None,
+def two_frames_phase(image_list: Union[List[np.ndarray], Tuple[np.ndarray]], mask: np.ndarray = None,
                      dc_kernel: float = 64, blur_kernel: float = 0.5, vu_iters=50) \
-        -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     if len(image_list) < 2:
         raise IndexError("The image list mist have at least two images")
 
     images = map(lambda image: image.astype(dtype=float) if image.dtype != float else image,
                  image_list)
+    images = tuple(images)
+    for image in image_list:
+        min = image.min()
+        max = image.max()
+        image[:, :] = linear_map(image, min, max, -1, 1)
+
     if blur_kernel > 0:
         images = map(lambda image: gaussian(image, blur_kernel), images)
     images = tuple(images)
@@ -93,16 +98,17 @@ def two_frames_phase(image_list: Union[List[np.ndarray], Tuple[np.ndarray]], mas
     image_matrix = create_matrix(dc, images, mask)
 
     mat_v, mat_u = psi_vu2.vu_factorization(image_matrix, error_accuracy=1e-6, verbose=True, max_iters=vu_iters)
-    pp = np.arctan2(-mat_v[:, 2], mat_v[:, 1])
-    steps = np.arctan2(-mat_u[:, 2], mat_u[:, 1])
+    pp = np.arctan2(-mat_v[:, 3], mat_v[:, 2])
+    steps = np.arctan2(-mat_u[:, 3], mat_u[:, 2])
 
     if mask is None:
         shape = image_list[0].shape
-        return pp.reshape(shape), steps[1:], mat_v[:, 0].reshape(shape)
+        return pp.reshape(shape), steps[2:], mat_v[:, 0].reshape(shape), mat_v[:, 1].reshape(shape)
     else:
         pp = img_reshape(mask, pp)
-        dc = img_reshape(mask, mat_v[:, 0])
-        return pp, steps[1:], dc
+        dc0 = img_reshape(mask, mat_v[:, 0])
+        dc1 = img_reshape(mask, mat_v[:, 1])
+        return pp, steps[2:], dc0, dc1
 
 
 # Number of fringe patterns
@@ -115,18 +121,19 @@ print(delta)
 
 phase = functions.ramp(shape[0], shape[1], 6., 1)
 phase = functions.peaks(shape[0], shape[1]) * 20
-phase = functions.parabola(shape[0], shape[1]) * 0.00008
+phase = functions.parabola(shape[0], shape[1]) * 0.0008
 dc = 5 - functions.gaussian(200, phase.shape) * 10
 contrast = 5.0 + 15 * functions.gaussian(140, phase.shape) + 1
-noise = .5
+noise = 15.5
 
-image_list = [dc + contrast * np.cos(phase + d) + np.random.randn(*shape) * noise for d in delta]
-I1 = ski_io.imread('../data/I1.png', as_gray=True)
-I2 = ski_io.imread('../data/I2.png', as_gray=True)
+# image_list = [dc + contrast * np.cos(phase + d) + np.random.randn(*shape) * noise for d in delta]
+# pp, steps, dc0, dc1 = two_frames_phase(image_list, mask=None, dc_kernel=80, blur_kernel=.5, vu_iters=100)
+
+I1 = ski_io.imread('../data/p1.png', as_gray=True)
+I2 = ski_io.imread('../data/p2.png', as_gray=True)
 mask = ski_io.imread('../data/p1_mask.png', as_gray=True)
 image_list = (I1, I2)
-
-pp, steps, dc_ = two_frames_phase(image_list, mask=None, dc_kernel=23, blur_kernel=3, vu_iters=100)
+pp, steps, dc0, dc1 = two_frames_phase(image_list, mask=mask, dc_kernel=7, blur_kernel=.9, vu_iters=100)
 
 cc = np.cos(pp)
 ss = np.sin(pp)
@@ -136,19 +143,25 @@ img1 = ss
 
 print(f"img0: ({img0.min(), img0.max()})")
 print(f"img1: ({img1.min(), img1.max()})")
-print(f"dc_: ({dc_.min(), dc_.max()})")
+print(f"dc0: ({dc0.min(), dc0.max()})")
+print(f"dc1: ({dc1.min(), dc1.max()})")
 print(f"steps: {steps}")
 
 plt.figure()
-plt.subplot(121)
+plt.subplot(221)
 plt.imshow(image_list[0], cmap=plt.cm.gray)
-plt.subplot(122)
+plt.subplot(222)
 plt.imshow(image_list[1], cmap=plt.cm.gray)
+plt.subplot(223)
+plt.imshow(dc0, cmap=plt.cm.gray)
+plt.subplot(224)
+plt.imshow(dc1, cmap=plt.cm.gray)
 
 plt.figure()
 plt.subplot(121)
 plt.imshow(pp, cmap=plt.cm.gray)
 plt.subplot(122)
-plt.imshow(dc_, cmap=plt.cm.gray)
+plt.imshow(img0, cmap=plt.cm.gray)
+
 
 plt.show()

@@ -19,33 +19,33 @@ def vu_factorization(matrix_I: np.ndarray, error_accuracy: float = 1e-3,
     """
     matrix_I += 1
     M, N = matrix_I.shape
-    deltas = np.linspace(0, np.pi, N-1, endpoint=False)
+    deltas = np.linspace(0, np.pi, N-2, endpoint=False)
 
     if matrix_V is not None:
         matrix_U = calc_term_U(matrix_I, matrix_V)
         matrix_V = calc_term_V(matrix_I, matrix_U)
     else:
-        matrix_U = np.array([(1, 1, 1), (0, np.cos(deltas[0]), np.cos(deltas[1])),
-                             (0, np.sin(deltas[0]), np.sin(deltas[1]))]).T
+        matrix_U = np.array([(1, 0, 1, 0), (0, 1, 0, 1), (0, 0, np.cos(deltas[0]), np.cos(deltas[1])),
+                             (0, 0, np.sin(deltas[0]), np.sin(deltas[1]))]).T
         matrix_V = calc_term_V(matrix_I, matrix_U)
     previous_phase = deltas[1]
 
     error = 1.0
     iter = 1
     for iter in range(1, max_iters):
-        phase, _ = calc_phase(matrix_V)
+        phase, _ = calc_phase(matrix_V[:, 1:])
         # matrix_V[:, 0] = np.ones_like(phase)
-        matrix_V[:, 1] = np.cos(phase)
-        matrix_V[:, 2] = -np.sin(phase)
+        matrix_V[:, 2] = np.cos(phase)
+        matrix_V[:, 3] = -np.sin(phase)
         matrix_U = calc_term_U(matrix_I, matrix_V)
 
-        steps, _ = calc_phase(matrix_U)
+        steps, _ = calc_phase(matrix_U[:, 1:])
         # matrix_U[:, 0] = np.ones_like(deltas)
-        matrix_U[:, 1] = np.array((0, np.cos(steps[1]), np.cos(steps[2])))
-        matrix_U[:, 2] = np.array((0, np.sin(steps[1]), np.sin(steps[2])))
+        matrix_U[:, 2] = np.array((0, 0, np.cos(steps[2]), np.cos(steps[3])))
+        matrix_U[:, 3] = np.array((0, 0, np.sin(steps[2]), np.sin(steps[3])))
         matrix_V = calc_term_V(matrix_I, matrix_U)
 
-        step = np.abs(steps[1]-steps[2])
+        step = np.abs(steps[2]-steps[3])
         error = np.abs(step - previous_phase)
         previous_phase = step
 

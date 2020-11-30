@@ -129,11 +129,11 @@ noise = 15.5
 # image_list = [dc + contrast * np.cos(phase + d) + np.random.randn(*shape) * noise for d in delta]
 # pp, steps, dc0, dc1 = two_frames_phase(image_list, mask=None, dc_kernel=80, blur_kernel=.5, vu_iters=100)
 
-I1 = ski_io.imread('../data/acetato_1.png', as_gray=True)
-I2 = ski_io.imread('../data/acetato_2.png', as_gray=True) #+ functions.gaussian(150, I1.shape)
-mask = ski_io.imread('../data/acetato_mask.png', as_gray=True)
+I1 = ski_io.imread('../data/p1.png', as_gray=True)
+I2 = ski_io.imread('../data/p2.png', as_gray=True)
+mask = ski_io.imread('../data/p1_mask.png', as_gray=True)
 image_list = (I1, I2)
-pp, steps, dc0, dc1 = two_frames_phase(image_list, mask=mask, dc_kernel=32, blur_kernel=.3, vu_iters=100)
+pp, steps, dc0, dc1 = two_frames_phase(image_list, mask=mask, dc_kernel=7, blur_kernel=.9, vu_iters=100)
 
 cc = np.cos(pp)
 ss = np.sin(pp)

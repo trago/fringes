@@ -159,7 +159,7 @@ plt.imshow(dc1, cmap=plt.cm.gray)
 
 plt.figure()
 plt.subplot(121)
-plt.imshow(pp, cmap=plt.cm.gray)
+plt.imshow(-pp, cmap=plt.cm.gray)
 plt.subplot(122)
 plt.imshow(img0, cmap=plt.cm.gray)
 
